@@ -1,0 +1,9 @@
+<result xsi:schemaLocation="http://www.fedora.info/definitions/1/0/types/ http://localhost:8088/fedora/schema/findObjects.xsd">
+    <listSession>
+        <token></token>
+        <cursor>0</cursor>
+        <expirationDate>2018-10-17T14:55:58.296Z</expirationDate>
+    </listSession>
+    <resultList>
+    </resultList>
+</result>
