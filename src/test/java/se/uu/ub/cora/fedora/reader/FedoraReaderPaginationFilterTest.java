@@ -12,34 +12,30 @@ import static org.testng.Assert.assertEquals;
 
 public class FedoraReaderPaginationFilterTest extends FedoraReaderTestBase {
     private final static String SOME_XML_PID_LIST = "someXmlPidList";
+    private static final String REQUEST_TYPE_LIST = "Converter URL for (someBaseUrl,someType)";
 
     @Test
     public void testFilterWithStartAsSomeValue() throws FedoraReaderException {
-        FedoraReader reader = fedoraReaderFactory.factor();
+//        FedoraReader reader = fedoraReaderFactory.factor();
+//        httpHandlerSpy.addQueryResponse(REQUEST_TYPE_LIST, SOME_XML_PID_LIST);
+//
+//        HttpHandlerSpy objectHttpHandlerSpy = new HttpHandlerSpy();
+//        httpHandlerFactorySpy.urlHandlers.put(pidRequestUrl("someObjectId"), objectHttpHandlerSpy);
+//
+//        setTotalNumberOfItemsForType(SOME_TYPE, 5);
+//
+//        var start = 3;
+//        var filter = createMinimumFilterWithStartAndRows(Optional.of(start), Optional.empty());
+//
+//        var result = reader.readList(SOME_TYPE, filter);
 
-        HttpHandlerSpy queryHttpHandlerSpy = new HttpHandlerSpy();
-        queryHttpHandlerSpy.responseText = SOME_XML_PID_LIST;
-        getHttpHandlerFactorySpy().urlHandlers.put("Converter URL for (someBaseUrl,someType)", queryHttpHandlerSpy);
-        HttpHandlerSpy objectHttpHandlerSpy = new HttpHandlerSpy();
-        getHttpHandlerFactorySpy().urlHandlers.put("Converter URL for (someBaseUrl,someObjectId)", objectHttpHandlerSpy);
-
-        setTotalNumberOfItemsForType(SOME_TYPE, 5);
-
-        var start = 3;
-        var filter = createMinimumFilterWithStartAndRows(Optional.of(start), Optional.empty());
-
-        var result = reader.readList(SOME_TYPE, filter);
-
-        var calledHandlers = getHttpHandlerFactorySpy().urlHandlers.keySet();
-        assertEquals(calledHandlers, Set.of());
+//        var calledHandlers = httpHandlerSpy.urlHandlers.keySet();
+//        assertEquals(calledHandlers, Set.of());
 
 //        assertEquals(result.totalNumberOfMatches, 5);
 //        assertEquals(result.listOfDataGroups, 3);
     }
 
-    private void setTotalNumberOfItemsForType(String type, int count) {
-        getHttpHandlerFactorySpy().totalNumberOfItemsOfType.put(type, count);
-    }
 
 //    @Test
 //    public void testFilterWithStartAsSomeOtherValue() throws FedoraReaderException {
@@ -98,13 +94,13 @@ public class FedoraReaderPaginationFilterTest extends FedoraReaderTestBase {
 //    public void testReadingAnObjectShouldLandSomeGoodXmlInTheOnlyConverterSpy() throws FedoraReaderException {
 //        FedoraReader reader = fedoraReaderFactory.factor();
 //
-//        setupHttpHandlerCallResponse(SOME_GOOD_RESPONSE_XML);
+//        setupHttpHandlerCallResponse(SOME_TYPE_REQUEST_XML_RESPONSE);
 //
 //        reader.read(SOME_TYPE, SOME_OBJECT_ID);
 //
 //        assertEquals(fedoraConverterSpies.size(), 1);
 //        assertTrue(fedoraConverterSpies.containsKey(SOME_TYPE));
-//        assertEquals(fedoraConverterSpies.get(SOME_TYPE).convertedXml, SOME_GOOD_RESPONSE_XML);
+//        assertEquals(fedoraConverterSpies.get(SOME_TYPE).convertedXml, SOME_TYPE_REQUEST_XML_RESPONSE);
 //    }
 //
 //    @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "someUnavailableType does not have a registered converter")
@@ -117,7 +113,7 @@ public class FedoraReaderPaginationFilterTest extends FedoraReaderTestBase {
 //    }
 //
 //    @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "someBadXml cannot be converted")
-//    public void testReadingObjectWithBadXmlShouldThrow() throws FedoraReaderException {
+//    public void testReadingObjectWithXmlThatCannotBeParsedShouldThrow() throws FedoraReaderException {
 //        FedoraReader reader = fedoraReaderFactory.factor();
 //
 //        setupConverterToReceiveBadXml();
@@ -128,7 +124,7 @@ public class FedoraReaderPaginationFilterTest extends FedoraReaderTestBase {
 //    @Test
 //    public void testReadingConvertedDataElement() throws FedoraReaderException {
 //        DataElement someDataElement = DataAtomic.withNameInDataAndValue(SOME_OBJECT_ID, "someValue");
-//        getFedoraReaderConverterFactorySpy().conversionResult = someDataElement;
+//        getFedoraReaderConverterFactorySpy().conversionResultForPid = someDataElement;
 //
 //        FedoraReader reader = fedoraReaderFactory.factor();
 //
@@ -138,14 +134,10 @@ public class FedoraReaderPaginationFilterTest extends FedoraReaderTestBase {
 //    }
 //
 //
-//
-//
-//
-//
 //    @Test
 //    public void testReadList() throws FedoraReaderException {
 //        DataElement someDataElement = DataAtomic.withNameInDataAndValue(SOME_OBJECT_ID, "someValue");
-//        getFedoraReaderConverterFactorySpy().conversionResult = someDataElement;
+//        getFedoraReaderConverterFactorySpy().conversionResultForPid = someDataElement;
 //
 //        FedoraReader reader = fedoraReaderFactory.factor();
 //
@@ -158,7 +150,7 @@ public class FedoraReaderPaginationFilterTest extends FedoraReaderTestBase {
 //    @Test
 //    public void testReadListWithSomeData() throws FedoraReaderException {
 //        DataElement someDataElement = DataAtomic.withNameInDataAndValue(SOME_OBJECT_ID, "someValue");
-//        getFedoraReaderConverterFactorySpy().conversionResult = someDataElement;
+//        getFedoraReaderConverterFactorySpy().conversionResultForPid = someDataElement;
 //
 //        FedoraReader reader = fedoraReaderFactory.factor();
 //

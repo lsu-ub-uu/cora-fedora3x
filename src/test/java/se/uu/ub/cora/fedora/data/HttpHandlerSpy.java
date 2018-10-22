@@ -1,18 +1,45 @@
 package se.uu.ub.cora.fedora.data;
 
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 
 import se.uu.ub.cora.httphandler.HttpHandler;
 
 public class HttpHandlerSpy implements HttpHandler {
+    public Map<String, Integer> urlCalls = new HashMap<>();
+    public Map<String, String> urlResponse = new HashMap<>();
+    private String responseText;
 
-    public String requestMethod;
-    public String responseText;
-    public boolean wasCalled = false;
+    public int getUrlCountCallFor(String query) {
+        return urlCalls.get(query);
+    }
+
+    public void addQueryResponse(String query, String response) {
+        urlCalls.put(query, 0);
+        urlResponse.put(query, response);
+    }
+
+    public boolean allWasCalledOnce() {
+        return urlCalls.entrySet().stream().allMatch(itm -> itm.getValue() > 0);
+    }
+
+    void wasCalledWith(String url)
+    {
+        updateUrlCounter(url);
+        responseText = urlResponse.get(url);
+    }
+
+    private void updateUrlCounter(String url) {
+        if(urlCalls.containsKey(url)) {
+            urlCalls.put(url, urlCalls.get(url) + 1);
+        } else {
+            urlCalls.put(url, 1);
+        }
+    }
+
     @Override
     public void setRequestMethod(String requestMethod) {
-        this.requestMethod = requestMethod;
     }
 
     @Override

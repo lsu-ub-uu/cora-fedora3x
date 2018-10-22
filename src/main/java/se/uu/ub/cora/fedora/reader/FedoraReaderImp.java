@@ -48,13 +48,13 @@ public class FedoraReaderImp implements FedoraReader {
         return xmlxPathParserFactory.factor().forXML(responseXml);
     }
 
-
-    FedoraReaderCursor readStuff(String query) {
-        return null;
-    }
-    FedoraReaderCursor readStuff(FedoraReaderCursor cursor, String query) {
-        return null;
-    }
+//
+//    FedoraReaderCursor readStuff(String query) {
+//        return null;
+//    }
+//    FedoraReaderCursor readStuff(FedoraReaderCursor cursor, String query) {
+//        return null;
+//    }
 
     @Override
     public SpiderReadResult readList(String type, DataGroup filter) throws FedoraReaderException {
@@ -124,11 +124,11 @@ public class FedoraReaderImp implements FedoraReader {
         }
     }
 
-    private long getRemainingNumberOfItemsInStorageFromCursor(FedoraReaderCursor cursor) {
-        //TODO: This should really, really be non-blocking.
-        if(cursor == null) {
-            return 0;
-        }
-        return 0;
-    }
+//    private long getRemainingNumberOfItemsInStorageFromCursor(FedoraReaderCursor cursor) {
+//        //TODO: This should really, really be non-blocking.
+//        if(cursor == null) {
+//            return 0;
+//        }
+//        return 0;
+//    }
 }

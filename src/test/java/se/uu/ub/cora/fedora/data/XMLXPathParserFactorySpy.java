@@ -1,15 +1,15 @@
 package se.uu.ub.cora.fedora.data;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class XMLXPathParserFactorySpy implements XMLXPathParserFactory {
     public XMLXPathParserSpy parserSpy;
+    public FedoraReaderXmlHelperSpy helperSpy;
 
     public int factorCallCount = 0;
+    public int factorHelperCallCount = 0;
 
-    public XMLXPathParserFactorySpy() {
+    public XMLXPathParserFactorySpy(){
         parserSpy = new XMLXPathParserSpy();
+        helperSpy = new FedoraReaderXmlHelperSpy();
     }
 
     @Override
@@ -20,6 +20,7 @@ public class XMLXPathParserFactorySpy implements XMLXPathParserFactory {
 
     @Override
     public FedoraReaderXmlHelper factorHelper() {
-        return new FedoraReaderXmlHelperSpy();
+        factorHelperCallCount++;
+        return helperSpy;
     }
 }
