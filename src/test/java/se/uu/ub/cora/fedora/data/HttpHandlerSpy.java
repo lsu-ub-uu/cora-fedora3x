@@ -15,13 +15,13 @@ public class HttpHandlerSpy implements HttpHandler {
         return urlCalls.get(query);
     }
 
-    public void addQueryResponse(String query, String response) {
-        urlCalls.put(query, 0);
+    public void addQueryResponse(String query, String response, int expectedNumberOfCalls) {
+        urlCalls.put(query, expectedNumberOfCalls);
         urlResponse.put(query, response);
     }
 
-    public boolean allWasCalledOnce() {
-        return urlCalls.entrySet().stream().allMatch(itm -> itm.getValue() > 0);
+    public boolean allCallsAccountedFor() {
+        return urlCalls.entrySet().stream().allMatch(itm -> itm.getValue() == 0);
     }
 
     void wasCalledWith(String url)
@@ -32,9 +32,9 @@ public class HttpHandlerSpy implements HttpHandler {
 
     private void updateUrlCounter(String url) {
         if(urlCalls.containsKey(url)) {
-            urlCalls.put(url, urlCalls.get(url) + 1);
+            urlCalls.put(url, urlCalls.get(url) - 1);
         } else {
-            urlCalls.put(url, 1);
+            urlCalls.put(url, 0);
         }
     }
 

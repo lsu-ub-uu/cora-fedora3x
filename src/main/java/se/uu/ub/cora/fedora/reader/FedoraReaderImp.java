@@ -60,11 +60,13 @@ public class FedoraReaderImp implements FedoraReader {
     public SpiderReadResult readList(String type, DataGroup filter) throws FedoraReaderException {
         try {
             var converter = fedoraReaderConverterFactory.factor(type);
+
             var requestQuery = converter.getQueryForList(filter);
             XMLXPathParser parserPidList = tryGetXmlXPathParserFromFedora(requestQuery);
             var fedoraReaderXmlHelper = xmlxPathParserFactory.factorHelper();
             var pidListAndCursor = fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(parserPidList);
-            var pidList = pidListAndCursor.getPidList();
+
+
 
 //            var cursor = readStuff(requestQuery);
 //            while (cursor != null) {
@@ -75,7 +77,7 @@ public class FedoraReaderImp implements FedoraReader {
             /// if cursor -> pidListAndCursor = callForMore
 
             SpiderReadResult result = new SpiderReadResult();
-            result.totalNumberOfMatches = pidList.size(); // getTotalNumberOfMatchesFromXml(parserPidList);
+            var pidList = pidListAndCursor.getPidList();
             result.listOfDataGroups = new ArrayList<>();
             if (!pidList.isEmpty()) {
                 for (var pid : pidList) {
@@ -85,7 +87,13 @@ public class FedoraReaderImp implements FedoraReader {
                     result.listOfDataGroups.add(converter.convert());
                 }
             }
-
+            result.totalNumberOfMatches = pidList.size(); // getTotalNumberOfMatchesFromXml(parserPidList);
+            if(pidListAndCursor.getCursor() != null && pidListAndCursor.getCursor().getToken() != null) {
+                var continueFindObjects = converter.getQueryForList(filter, pidListAndCursor.getCursor());
+                XMLXPathParser parserPidList1 = tryGetXmlXPathParserFromFedora(continueFindObjects);
+                var pidListAndCursor1 = fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(parserPidList1);
+                result.totalNumberOfMatches += pidListAndCursor1.getPidList().size();
+            }
 //            result.totalNumberOfMatches = result.listOfDataGroups.size();
 //      result.totalNumberOfMatches += getRemainingNumberOfItemsInStorageFromCursor(pidListAndCursor.getCursor());
 //            var totalNumberOfMatches = 0;

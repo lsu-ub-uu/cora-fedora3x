@@ -7,15 +7,19 @@ import java.util.Map;
 
 public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
     public Map<String, List<String>> pidListsForXml;
+    public Map<String, Boolean> pidListHasCursor;
+
     public boolean failPidExtraction;
 
     FedoraReaderXmlHelperSpy() {
         failPidExtraction = false;
         pidListsForXml = new HashMap<>();
+        pidListHasCursor = new HashMap<>();
     }
 
-    public void addPidListForXml(String xml, List<String> pidList) {
+    public void addPidListForXml(String xml, boolean hasCursor, List<String> pidList) {
         pidListsForXml.put(xml, pidList);
+        pidListHasCursor.put(xml, hasCursor);
     }
 
     @Override
@@ -37,7 +41,15 @@ public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
         return new ArrayList<>();
     }
 
-    private FedoraReaderCursor extractCursor(XMLXPathParser xmlxPathParser) throws XMLXPathParserException {
+    private FedoraReaderCursor extractCursor(XMLXPathParser xmlxPathParser) {
+        if(xmlxPathParser instanceof XMLXPathParserSpy) {
+            var xmlPathParserSpy = (XMLXPathParserSpy) xmlxPathParser;
+            String lastParsedXml = xmlPathParserSpy.getLastParsedXml();
+
+            if (pidListHasCursor.getOrDefault(lastParsedXml, false)) {
+                return new FedoraReaderCursor(lastParsedXml);
+            }
+        }
         return null;
     }
 }

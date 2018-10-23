@@ -70,11 +70,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
         assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1);
         assertTrue(httpHandlerSpy.urlCalls.containsKey(SOME_PID_QUERY));
-        assertEquals(httpHandlerSpy.getUrlCountCallFor(SOME_PID_QUERY), 1);
-    }
-
-    private String converterURLQuery(String value) {
-        return "Converter URL for (" + SOME_BASE_URL + "," + value + ")";
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(SOME_PID_QUERY), 0);
     }
 
     @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "Cannot create URL for someObjectId")
@@ -103,7 +99,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         FedoraReader reader = fedoraReaderFactory.factor();
 
         fedoraReaderConverterSpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY);
-        httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE);
+        httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE,1);
 
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
 
@@ -116,7 +112,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         FedoraReader reader = fedoraReaderFactory.factor();
 
         fedoraReaderConverterSpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY);
-        httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE);
+        httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE,1);
         xmlxPathParserSpy.addXml(SOME_PID_REQUEST_XML_RESPONSE);
 
         DataGroup expected = DataGroup.withNameInData("someDataGroup");
@@ -151,7 +147,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         FedoraReader reader = fedoraReaderFactory.factor();
 
         fedoraReaderConverterSpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY);
-        httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE);
+        httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE,1);
         xmlxPathParserSpy.addInvalidXml(SOME_PID_REQUEST_XML_RESPONSE);
 
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
@@ -180,13 +176,13 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         FedoraReader reader = fedoraReaderFactory.factor();
 
         fedoraReaderConverterSpy.queryForType = SOME_TYPE_QUERY;
-        httpHandlerSpy.addQueryResponse(SOME_TYPE_QUERY, SOME_TYPE_REQUEST_XML_RESPONSE);
+        httpHandlerSpy.addQueryResponse(SOME_TYPE_QUERY, SOME_TYPE_REQUEST_XML_RESPONSE, 1);
 
         reader.readList(SOME_TYPE, EMPTY_FILTER);
 
         Assert.assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1);
 
-        assertTrue(httpHandlerSpy.allWasCalledOnce());
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
     }
 
     @Test
@@ -203,7 +199,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         FedoraReader reader = fedoraReaderFactory.factor();
 
         fedoraReaderConverterSpy.queryForType = SOME_TYPE_QUERY;
-        httpHandlerSpy.addQueryResponse(SOME_TYPE_QUERY, SOME_TYPE_REQUEST_XML_RESPONSE);
+        httpHandlerSpy.addQueryResponse(SOME_TYPE_QUERY, SOME_TYPE_REQUEST_XML_RESPONSE, 1);
         reader.readList(SOME_TYPE, EMPTY_FILTER);
 
         assertEquals(xmlxPathParserFactorySpy.factorCallCount, 1);
@@ -215,7 +211,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         FedoraReader reader = fedoraReaderFactory.factor();
 
         fedoraReaderConverterSpy.queryForType = SOME_TYPE_QUERY;
-        httpHandlerSpy.addQueryResponse(SOME_TYPE_QUERY, SOME_TYPE_REQUEST_XML_RESPONSE);
+        httpHandlerSpy.addQueryResponse(SOME_TYPE_QUERY, SOME_TYPE_REQUEST_XML_RESPONSE, 1);
 
         xmlxPathParserSpy.addInvalidXml(SOME_TYPE_REQUEST_XML_RESPONSE);
 
@@ -234,22 +230,22 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
         assertEquals(fedoraReaderConverterSpy.loadedXml.size(), 3);
 
-        assertTrue(httpHandlerSpy.allWasCalledOnce());
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
     }
 
     private void createHttpHandlersForReadList(String type, List<String> pidList) {
         String typeQuery = SOME_TYPE_QUERY + type;
         fedoraReaderConverterSpy.queryForType = typeQuery;
         String typeResponseXml = SOME_TYPE_REQUEST_XML_RESPONSE + type;
-        httpHandlerSpy.addQueryResponse(typeQuery, typeResponseXml);
+        httpHandlerSpy.addQueryResponse(typeQuery, typeResponseXml, 1);
         xmlxPathParserSpy.addXml(typeResponseXml);
-        fedoraReaderXmlHelperSpy.addPidListForXml(typeResponseXml, pidList);
+        fedoraReaderXmlHelperSpy.addPidListForXml(typeResponseXml, false, pidList);
 
         for (var pid : pidList) {
             String pidQuery = SOME_PID_QUERY + pid;
             fedoraReaderConverterSpy.addQueryForId(pid, pidQuery);
             String pidResponseXml = SOME_PID_REQUEST_XML_RESPONSE + pid;
-            httpHandlerSpy.addQueryResponse(pidQuery, pidResponseXml);
+            httpHandlerSpy.addQueryResponse(pidQuery, pidResponseXml, 1);
             xmlxPathParserSpy.addXml(pidResponseXml);
         }
     }
@@ -287,7 +283,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         assertEquals(fedoraReaderConverterSpy.queryForTypeCalls, 1);
 
         assertEquals(fedoraReaderConverterSpy.getPidCountFor(somePid), 1);
-        assertTrue(httpHandlerSpy.allWasCalledOnce());
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
     }
 
     @Test
@@ -307,7 +303,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
             assertEquals(fedoraReaderConverterSpy.getPidCountFor(somePid), 1);
         }
 
-        assertTrue(httpHandlerSpy.allWasCalledOnce());
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
     }
 
     @Test
@@ -323,7 +319,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
         Assert.assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1 + pidCount);
         assertEquals(xmlxPathParserFactorySpy.factorCallCount, 1 + pidCount);
-        assertTrue(httpHandlerSpy.allWasCalledOnce());
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
         assertEquals(fedoraReaderConverterSpy.convertCalls, pidCount);
     }
 
@@ -340,7 +336,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         assertNotNull(result.listOfDataGroups);
         assertEquals(result.listOfDataGroups.size(), 1);
         assertEquals(result.totalNumberOfMatches, 1);
-        assertTrue(httpHandlerSpy.allWasCalledOnce());
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
     }
 
     @Test
@@ -356,9 +352,8 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         assertNotNull(result.listOfDataGroups);
         assertEquals(result.listOfDataGroups.size(), somePidList.size());
         assertEquals(result.totalNumberOfMatches, somePidList.size());
-        assertTrue(httpHandlerSpy.allWasCalledOnce());
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
     }
-
 
     @Test
     public void testReadListWithCursor() throws FedoraReaderException {
@@ -366,56 +361,19 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
         int pageSize = 3;
         List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
-
-        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, pageSize);
-
+        int totalSize = somePidList.size();
+        List<Boolean> livePages = new ArrayList<>();
+        livePages.add(true);
+        livePages.add(false);
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, livePages, pageSize);
 
         SpiderReadResult result = reader.readList(SOME_TYPE, EMPTY_FILTER);
 
         assertNotNull(result);
         assertNotNull(result.listOfDataGroups);
-        assertEquals(result.listOfDataGroups.size(), somePidList.size());
-        assertEquals(result.totalNumberOfMatches, somePidList.size());
-        assertTrue(httpHandlerSpy.allWasCalledOnce());
+        assertEquals(result.listOfDataGroups.size(), pageSize);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
     }
 
-    private void createHandlerForPid(String pid) {
-        httpHandlerSpy.addQueryResponse(pid, SOME_PID_REQUEST_XML_RESPONSE + pid);
-        xmlxPathParserSpy.addXml(SOME_PID_REQUEST_XML_RESPONSE + pid);
-    }
-
-    private String getTypeRequestQueryWithCursor(String type, int cursor) {
-        return SOME_TYPE_REQUEST_XML_RESPONSE + type + ":cursor:" + cursor;
-    }
-
-    private void createPagedHttpHandlersForReadList(String type, List<String> pidList, int pageSize) {
-        String typeQuery = SOME_TYPE_QUERY + type;
-        fedoraReaderConverterSpy.queryForType = typeQuery;
-
-        pidList.forEach(this::createHandlerForPid);
-
-        int pidCount = pidList.size();
-        if (pidCount < pageSize) {
-            httpHandlerSpy.addQueryResponse(typeQuery, SOME_TYPE_REQUEST_XML_RESPONSE + type);
-            xmlxPathParserSpy.addXml(SOME_TYPE_REQUEST_XML_RESPONSE + type);
-            fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE + type, pidList);
-        } else {
-            String typeRequestQueryWithCursor = getTypeRequestQueryWithCursor(type, 0);
-            httpHandlerSpy.addQueryResponse(typeQuery, typeRequestQueryWithCursor);
-            xmlxPathParserSpy.addXml(typeRequestQueryWithCursor);
-            fedoraReaderXmlHelperSpy.addPidListForXml(typeRequestQueryWithCursor, pidList.subList(0,pageSize));
-            int idx = 1;
-            for (; (idx + 1) * pageSize < pidCount; idx++) {
-                String xmlResponse = getTypeRequestQueryWithCursor(type, idx);
-                httpHandlerSpy.addQueryResponse(getTypeRequestQueryWithCursor(type, idx - 1),
-                        xmlResponse);
-                xmlxPathParserSpy.addXml(xmlResponse);
-                fedoraReaderXmlHelperSpy.addPidListForXml(xmlResponse, pidList.subList(pageSize * idx, pageSize * idx + 1));
-            }
-            String finalXmlResponse = "finalXmlResponse";
-            httpHandlerSpy.addQueryResponse(getTypeRequestQueryWithCursor(type, idx - 1), finalXmlResponse);
-            xmlxPathParserSpy.addXml(finalXmlResponse);
-            fedoraReaderXmlHelperSpy.addPidListForXml(finalXmlResponse, pidList.subList(pageSize * idx, pidList.size()));
-        }
-    }
 }

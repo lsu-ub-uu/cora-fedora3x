@@ -1,6 +1,7 @@
 package se.uu.ub.cora.fedora.reader.converter;
 
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
+import se.uu.ub.cora.fedora.data.FedoraReaderCursor;
 import se.uu.ub.cora.fedora.data.XMLXPathParser;
 
 public abstract class FedoraReaderConverter {
@@ -22,5 +23,5 @@ public abstract class FedoraReaderConverter {
 
     public abstract String getQueryForList(DataGroup filter);
 
-
+    public abstract String getQueryForList(DataGroup filter, FedoraReaderCursor cursor);
 }
