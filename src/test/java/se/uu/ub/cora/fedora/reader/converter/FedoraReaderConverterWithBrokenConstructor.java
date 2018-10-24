@@ -8,8 +8,8 @@ import se.uu.ub.cora.fedora.reader.converter.FedoraReaderConverterException;
 
 public class FedoraReaderConverterWithBrokenConstructor extends FedoraReaderConverter {
 
-    public FedoraReaderConverterWithBrokenConstructor(String baseUrl) {
-        super(baseUrl);
+    public FedoraReaderConverterWithBrokenConstructor() {
+        super();
         throw new RuntimeException("FedoraReaderConverterWithBrokenConstructor exploded");
     }
 

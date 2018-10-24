@@ -51,8 +51,8 @@ public class FedoraReaderConverterSpy extends FedoraReaderConverter {
         queryForId.put(id, query);
     }
 
-    public FedoraReaderConverterSpy(String baseUrl) {
-        super(baseUrl);
+    public FedoraReaderConverterSpy() {
+        super();
 
         queryForId = new HashMap<>();
         factorTypeCount = new HashMap<>();

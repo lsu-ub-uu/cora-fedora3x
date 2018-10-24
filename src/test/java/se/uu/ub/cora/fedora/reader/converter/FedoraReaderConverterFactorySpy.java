@@ -6,7 +6,7 @@ public class FedoraReaderConverterFactorySpy implements FedoraReaderConverterFac
     public boolean noConverters = false;
 
     @Override
-    public FedoraReaderConverter factor(String type) throws FedoraReaderConverterFactoryException {
+    public FedoraReaderConverter factorConverter(String type) throws FedoraReaderConverterFactoryException {
         factorCount++;
         if(noConverters) {
             throw new FedoraReaderConverterFactoryException(type + " does not have a registered converter");
@@ -16,8 +16,13 @@ public class FedoraReaderConverterFactorySpy implements FedoraReaderConverterFac
     }
 
     @Override
-    public void register(Class<? extends FedoraReaderConverter> fedoraReaderConverter) {
+    public void registerConverter(Class<? extends FedoraReaderConverter> fedoraReaderConverter) {
         throw new RuntimeException("not implemented in spy factory");
+    }
+
+    @Override
+    public void registerTypeRestQueryInterface(Class<? extends FedoraTypeRestQueryInterface> fedoraTypeRestQueryInterface) throws FedoraReaderConverterFactoryException {
+
     }
 
     @Override
@@ -27,6 +32,21 @@ public class FedoraReaderConverterFactorySpy implements FedoraReaderConverterFac
 
     @Override
     public void setBaseUrl(String baseUrl) {
+    }
+
+    @Override
+    public FedoraTypeRestQueryInterface factorTypeRestQueryInterface(String someType) {
+        return null;
+    }
+
+    @Override
+    public Class<? extends FedoraTypeRestQueryInterface> getDefaultTypeRestQueryInterface() {
+        return null;
+    }
+
+    @Override
+    public void setDefaultTypeRestQueryInterface(Class<? extends FedoraTypeRestQueryInterface> defaultTypeRestQueryInterfaceClass) {
+
     }
 
 }

@@ -3,12 +3,14 @@ package se.uu.ub.cora.fedora.reader;
 import org.testng.annotations.Test;
 import se.uu.ub.cora.bookkeeper.data.DataAtomic;
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
-import se.uu.ub.cora.fedora.data.HttpHandlerSpy;
+import se.uu.ub.cora.spider.data.SpiderReadResult;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 public class FedoraReaderPaginationFilterTest extends FedoraReaderTestBase {
     private final static String SOME_XML_PID_LIST = "someXmlPidList";
@@ -16,147 +18,436 @@ public class FedoraReaderPaginationFilterTest extends FedoraReaderTestBase {
 
     @Test
     public void testFilterWithStartAsSomeValue() throws FedoraReaderException {
-//        FedoraReader reader = fedoraReaderFactory.factor();
-//        httpHandlerSpy.addQueryResponse(REQUEST_TYPE_LIST, SOME_XML_PID_LIST);
-//
-//        HttpHandlerSpy objectHttpHandlerSpy = new HttpHandlerSpy();
-//        httpHandlerFactorySpy.urlHandlers.put(pidRequestUrl("someObjectId"), objectHttpHandlerSpy);
-//
-//        setTotalNumberOfItemsForType(SOME_TYPE, 5);
-//
-//        var start = 3;
-//        var filter = createMinimumFilterWithStartAndRows(Optional.of(start), Optional.empty());
-//
-//        var result = reader.readList(SOME_TYPE, filter);
+        FedoraReader reader = fedoraReaderFactory.factor();
 
-//        var calledHandlers = httpHandlerSpy.urlHandlers.keySet();
-//        assertEquals(calledHandlers, Set.of());
+        int pageSize = 5;
+        List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(0,0,1,1,1);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
 
-//        assertEquals(result.totalNumberOfMatches, 5);
-//        assertEquals(result.listOfDataGroups, 3);
+        var start = 3;
+        var filter = createMinimumFilterWithStartAndRows(Optional.of(start), Optional.empty());
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), totalSize - start + 1);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
     }
 
 
-//    @Test
-//    public void testFilterWithStartAsSomeOtherValue() throws FedoraReaderException {
-//        FedoraReader reader = fedoraReaderFactory.factor();
-//
-//        setTotalNumberOfItemsForType(SOME_TYPE, 5);
-//
-//        var start = 1;
-//        var filter = createMinimumFilterWithStartAndRows(Optional.of(start), Optional.empty());
-//
-//        var result = reader.readList(SOME_TYPE, filter);
-//
-//        assertEquals(result.totalNumberOfMatches, 5);
-//        assertEquals(result.listOfDataGroups, 5);
-//    }
+    @Test
+    public void testFilterWithStartAsSomeOtherValue() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
 
+        int pageSize = 5;
+        List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(0,1,1,1,1);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var start = 2;
+        var filter = createMinimumFilterWithStartAndRows(Optional.of(start), Optional.empty());
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), totalSize - start + 1);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
+
+    @Test
+    public void testFilterWithRowsAsSomeValue() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 5;
+        List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(1,1,0,0,0);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var rows = 2;
+        var filter = createMinimumFilterWithStartAndRows(Optional.empty(), Optional.of(rows));
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), rows);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
+    @Test
+    public void testFilterWithRowsAsSomeOtherValue() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 5;
+        List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(1,1,1,0,0);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var rows = 3;
+        var filter = createMinimumFilterWithStartAndRows(Optional.empty(), Optional.of(rows));
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), rows);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
+    @Test
+    public void testFilterWithStartAndRowsAsValues() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 5;
+        List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(0,0,1,1,0);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var start = 3;
+        var rows = 2;
+        var filter = createMinimumFilterWithStartAndRows(Optional.of(start), Optional.of(rows));
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), rows);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
+    @Test
+    public void testFilterWithStartAndRowsAsOtherValues() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 5;
+        List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(0,1,1,1,0);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var start = 2;
+        var rows = 3;
+        var filter = createMinimumFilterWithStartAndRows(Optional.of(start), Optional.of(rows));
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), rows);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
+    @Test
+    public void testPagedResultFilterWithStartAsSomeValue() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 3;
+        List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(0,0,1,1,1);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var start = 3;
+        var filter = createMinimumFilterWithStartAndRows(Optional.of(start), Optional.empty());
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), totalSize - start + 1);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
+
+    @Test
+    public void testPagedResultFilterWithStartAsSomeOtherValue() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 3;
+        List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(0,1,1,1,1);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var start = 2;
+        var filter = createMinimumFilterWithStartAndRows(Optional.of(start), Optional.empty());
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), totalSize - start + 1);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
+
+    @Test
+    public void testPagedResultFilterWithRowsAsSomeValue() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 3;
+        List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(1,1,0,0,0);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var rows = 2;
+        var filter = createMinimumFilterWithStartAndRows(Optional.empty(), Optional.of(rows));
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), rows);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
+    @Test
+    public void testPagedResultFilterWithRowsAsSomeOtherValue() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 3;
+        List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(1,1,1,0,0);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var rows = 3;
+        var filter = createMinimumFilterWithStartAndRows(Optional.empty(), Optional.of(rows));
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), rows);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
+    @Test
+    public void testPagedResultFilterWithStartAndRowsAsValues() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 3;
+        List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(0,0,1,1,0);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var start = 3;
+        var rows = 2;
+        var filter = createMinimumFilterWithStartAndRows(Optional.of(start), Optional.of(rows));
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), rows);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
+    @Test
+    public void testPagedResultFilterWithStartAndRowsAsOtherValues() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 3;
+        List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(0,1,1,1,0);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var start = 2;
+        var rows = 3;
+        var filter = createMinimumFilterWithStartAndRows(Optional.of(start), Optional.of(rows));
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), rows);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
+    @Test
+    public void testPagedResultWithMorePagesFilterWithStartAsSomeValue() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 5;
+        List<String> somePidList = getSomePidList(
+                2, 3, 5, 7, 11,
+                13, 17, 19, 23, 27,
+                29, 31, 37);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(0,0,1,1,1, 1,1,1,1,1, 1,1,1);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var start = 3;
+        var filter = createMinimumFilterWithStartAndRows(Optional.of(start), Optional.empty());
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), totalSize - start + 1);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
+
+    @Test
+    public void testPagedResultWithMorePagesFilterWithStartAsSomeOtherValue() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 5;
+        List<String> somePidList = getSomePidList(
+                2, 3, 5, 7, 11,
+                13, 17, 19, 23, 27,
+                29, 31, 37);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(0,0,0,0,0, 1,1,1,1,1, 1,1,1);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var start = 6;
+        var filter = createMinimumFilterWithStartAndRows(Optional.of(start), Optional.empty());
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), totalSize - start + 1);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
+
+    @Test
+    public void testPagedResultWithMorePagesFilterWithRowsAsSomeValue() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 5;
+        List<String> somePidList = getSomePidList(
+                2, 3, 5, 7, 11,
+                13, 17, 19, 23, 27,
+                29, 31, 37);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(1,1,0,0,0, 0,0,0,0,0, 0,0,0);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var rows = 2;
+        var filter = createMinimumFilterWithStartAndRows(Optional.empty(), Optional.of(rows));
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), rows);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
+    @Test
+    public void testPagedResultWithMorePagesFilterWithRowsAsSomeOtherValue() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 5;
+        List<String> somePidList = getSomePidList(
+                2, 3, 5, 7, 11,
+                13, 17, 19, 23, 27,
+                29, 31, 37);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(1,1,1,1,1, 1,1,0,0,0, 0,0,0);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var rows = 7;
+        var filter = createMinimumFilterWithStartAndRows(Optional.empty(), Optional.of(rows));
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), rows);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
+    @Test
+    public void testPagedResultWithMorePagesFilterWithStartAndRowsAsValues() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 5;
+        List<String> somePidList = getSomePidList(
+                2, 3, 5, 7, 11,
+                13, 17, 19, 23, 27,
+                29, 31, 37);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(0,0,0,1,1, 1,1,0,0,0, 0,0,0);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var start = 4;
+        var rows = 4;
+        var filter = createMinimumFilterWithStartAndRows(Optional.of(start), Optional.of(rows));
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), rows);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
+    @Test
+    public void testPagedResultWithMorePagesFilterWithStartAndRowsAsOtherValues() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 5;
+        List<String> somePidList = getSomePidList(
+                2, 3, 5, 7, 11,
+                13, 17, 19, 23, 27,
+                29, 31, 37);
+        List<Integer> shouldBeAccessed = getSomePidAccessCountList(0,0,0,0,0, 0,0,1,1,1, 1,1,0);
+        int totalSize = somePidList.size();
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, shouldBeAccessed, pageSize);
+
+        var start = 8;
+        var rows = 5;
+        var filter = createMinimumFilterWithStartAndRows(Optional.of(start), Optional.of(rows));
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, filter);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        assertEquals(result.listOfDataGroups.size(), rows);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
 
     private DataGroup createMinimumFilterWithStartAndRows(Optional<Integer> start, Optional<Integer> rows) {
         DataGroup searchData = DataGroup.withNameInData("filter");
-        if(start.isPresent()) {
-            searchData.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start.get())));
-        }
-        if(rows.isPresent()) {
-            searchData.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows.get())));
-        }
+        start.ifPresent(integer ->
+                searchData.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(integer))));
+        rows.ifPresent(integer ->
+                searchData.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(integer))));
         return searchData;
     }
-//    @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "XML cannot be converted to someType")
-//    public void testReadListShouldSendSomeXMLToTheXMLParserAndIfItsUselessTheConverterShouldThrow() throws FedoraReaderException {
-//        FedoraReader reader = fedoraReaderFactory.factor();
-//
-//        xmlxPathParserFactorySpy().uselessXml = true;
-//
-//        reader.readList(SOME_TYPE, EMPTY_FILTER);
-//    }
-
-    @Test
-    public void testReadListShouldRegisterAsACallToHttpHandler() throws FedoraReaderException {
-        var reader = fedoraReaderFactory.factor();
-
-//        reader.readList(SOME_TYPE, EMPTY_FILTER);
-
-//        assertEquals(getFactoredHttpHandlerSpies().size(), 1);
-
-//        String actualFirstUrl = getActualUrlFromHttpHandlerFactorySpyForCall(0);
-//        var expectedFirstUrl = getReadListUrlForCountAndType(DEFAULT_NUMBER_OF_OBJECTS_TO_READ, SOME_TYPE);
-//        assertEquals(actualFirstUrl, expectedFirstUrl);
-
-//        String actualSecondUrl = getActualUrlFromHttpHandlerFactorySpyForCall(2);
-//        var expectedSecondUrl = SOME_BASE_URL + "objects/" + SOME_OBJECT_ID + "/datastreams/METADATA/content";
-//        assertEquals(actualSecondUrl, expectedSecondUrl);
-    }
-
-
-//    @Test
-//    public void testReadingAnObjectShouldLandSomeGoodXmlInTheOnlyConverterSpy() throws FedoraReaderException {
-//        FedoraReader reader = fedoraReaderFactory.factor();
-//
-//        setupHttpHandlerCallResponse(SOME_TYPE_REQUEST_XML_RESPONSE);
-//
-//        reader.read(SOME_TYPE, SOME_OBJECT_ID);
-//
-//        assertEquals(fedoraConverterSpies.size(), 1);
-//        assertTrue(fedoraConverterSpies.containsKey(SOME_TYPE));
-//        assertEquals(fedoraConverterSpies.get(SOME_TYPE).convertedXml, SOME_TYPE_REQUEST_XML_RESPONSE);
-//    }
-//
-//    @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "someUnavailableType does not have a registered converter")
-//    public void testReadObjectWithNoRegisteredConverterShouldThrow() throws FedoraReaderException {
-//        FedoraReader reader = fedoraReaderFactory.factor();
-//
-//        blacklistConverterType(SOME_UNAVAILABLE_TYPE);
-//
-//        reader.read(SOME_UNAVAILABLE_TYPE, SOME_OBJECT_ID);
-//    }
-//
-//    @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "someBadXml cannot be converted")
-//    public void testReadingObjectWithXmlThatCannotBeParsedShouldThrow() throws FedoraReaderException {
-//        FedoraReader reader = fedoraReaderFactory.factor();
-//
-//        setupConverterToReceiveBadXml();
-//
-//        reader.read(SOME_TYPE, SOME_OBJECT_ID);
-//    }
-//
-//    @Test
-//    public void testReadingConvertedDataElement() throws FedoraReaderException {
-//        DataElement someDataElement = DataAtomic.withNameInDataAndValue(SOME_OBJECT_ID, "someValue");
-//        getFedoraReaderConverterFactorySpy().conversionResultForPid = someDataElement;
-//
-//        FedoraReader reader = fedoraReaderFactory.factor();
-//
-//        DataElement readResult = reader.read(SOME_TYPE, SOME_OBJECT_ID);
-//
-//        assertEquals(someDataElement, readResult);
-//    }
-//
-//
-//    @Test
-//    public void testReadList() throws FedoraReaderException {
-//        DataElement someDataElement = DataAtomic.withNameInDataAndValue(SOME_OBJECT_ID, "someValue");
-//        getFedoraReaderConverterFactorySpy().conversionResultForPid = someDataElement;
-//
-//        FedoraReader reader = fedoraReaderFactory.factor();
-//
-//        DataElement readResult = reader.read(SOME_TYPE, SOME_OBJECT_ID);
-//
-//        assertEquals(someDataElement, readResult);
-//    }
-//
-//
-//    @Test
-//    public void testReadListWithSomeData() throws FedoraReaderException {
-//        DataElement someDataElement = DataAtomic.withNameInDataAndValue(SOME_OBJECT_ID, "someValue");
-//        getFedoraReaderConverterFactorySpy().conversionResultForPid = someDataElement;
-//
-//        FedoraReader reader = fedoraReaderFactory.factor();
-//
-//        DataElement readResult = reader.read(SOME_TYPE, SOME_OBJECT_ID);
-//
-//        assertEquals(someDataElement, readResult);
-//    }
-
 }

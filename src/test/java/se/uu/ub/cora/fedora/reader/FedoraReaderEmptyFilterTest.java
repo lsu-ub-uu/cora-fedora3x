@@ -9,6 +9,7 @@ import se.uu.ub.cora.fedora.reader.converter.FedoraReaderConverterSpy;
 import se.uu.ub.cora.spider.data.SpiderReadResult;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -75,7 +76,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
     @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "Cannot create URL for someObjectId")
     public void testReadingAnObjectWithBadId() throws FedoraReaderException {
-        FedoraReaderConverterSpy fedoraReaderConverterSpy = new FedoraReaderConverterSpy("bob");
+        FedoraReaderConverterSpy fedoraReaderConverterSpy = new FedoraReaderConverterSpy();
         fedoraReaderConverterSpy.badId = SOME_OBJECT_ID;
 
         fedoraReaderConverterFactorySpy.fedoraReaderConverterSpy = fedoraReaderConverterSpy;
@@ -250,14 +251,6 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         }
     }
 
-    private List<String> getSomePidList(Integer... integers) {
-        List<String> xmlPidSet = new ArrayList<>();
-        for (var integer : integers) {
-            xmlPidSet.add("somePid:0000" + integer);
-        }
-        return xmlPidSet;
-    }
-
     @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "pid extraction failed")
     public void testReadListConverterShouldGetXMLToParsePidListFromAndThrowIfPidListIsBad() throws FedoraReaderException {
         FedoraReader reader = fedoraReaderFactory.factor();
@@ -361,19 +354,40 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
         int pageSize = 3;
         List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
-        int totalSize = somePidList.size();
-        List<Boolean> livePages = new ArrayList<>();
-        livePages.add(true);
-        livePages.add(false);
-        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, livePages, pageSize);
+        List<Integer> somePidListAccessCounts = somePidList.stream().map(itm -> 1).collect(Collectors.toList());
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, somePidListAccessCounts, pageSize);
 
         SpiderReadResult result = reader.readList(SOME_TYPE, EMPTY_FILTER);
 
         assertNotNull(result);
         assertNotNull(result.listOfDataGroups);
-        assertEquals(result.listOfDataGroups.size(), pageSize);
+        int totalSize = somePidList.size();
+        assertEquals(result.listOfDataGroups.size(), totalSize);
         assertEquals(result.totalNumberOfMatches, totalSize);
         assertTrue(httpHandlerSpy.allCallsAccountedFor());
     }
 
+    @Test
+    public void testReadListWithCursorAndSeveralPages() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        int pageSize = 3;
+        List<String> somePidList = getSomePidList(
+                2, 3, 5, 7, 11,
+                13, 17, 19, 23, 27,
+                29, 31, 37);
+        List<Integer> somePidListAccessCounts = somePidList.stream().map(itm -> 1).collect(Collectors.toList());
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, somePidListAccessCounts, pageSize);
+
+        SpiderReadResult result = reader.readList(SOME_TYPE, EMPTY_FILTER);
+
+        assertNotNull(result);
+        assertNotNull(result.listOfDataGroups);
+        int totalSize = somePidList.size();
+        assertEquals(result.listOfDataGroups.size(), totalSize);
+        assertEquals(result.totalNumberOfMatches, totalSize);
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
 }

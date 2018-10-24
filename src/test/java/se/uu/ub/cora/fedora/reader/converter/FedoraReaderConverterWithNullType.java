@@ -6,8 +6,8 @@ import se.uu.ub.cora.fedora.data.XMLXPathParser;
 
 public class FedoraReaderConverterWithNullType extends FedoraReaderConverter {
 
-    public FedoraReaderConverterWithNullType(String baseUrl) {
-        super(baseUrl);
+    public FedoraReaderConverterWithNullType() {
+        super();
     }
 
     @Override

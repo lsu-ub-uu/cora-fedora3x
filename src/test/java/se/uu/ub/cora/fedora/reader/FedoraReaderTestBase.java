@@ -1,13 +1,17 @@
 package se.uu.ub.cora.fedora.reader;
 
 import org.testng.annotations.BeforeMethod;
+import se.uu.ub.cora.fedora.CoraLogger;
+import se.uu.ub.cora.fedora.CoraLoggerSpy;
 import se.uu.ub.cora.fedora.data.*;
 import se.uu.ub.cora.fedora.reader.converter.FedoraReaderConverterFactory;
 import se.uu.ub.cora.fedora.reader.converter.FedoraReaderConverterFactorySpy;
 import se.uu.ub.cora.fedora.reader.converter.FedoraReaderConverterSpy;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class FedoraReaderTestBase {
     static final String SOME_TYPE = "someType";
@@ -21,7 +25,7 @@ public class FedoraReaderTestBase {
     static final String SOME_PID_REQUEST_XML_RESPONSE = "someXmlPidResponse:";
 
     FedoraReaderFactory fedoraReaderFactory;
-
+    CoraLogger coraLogger;
     FedoraReaderConverterFactorySpy fedoraReaderConverterFactorySpy;
     FedoraReaderConverterSpy fedoraReaderConverterSpy;
 
@@ -35,6 +39,7 @@ public class FedoraReaderTestBase {
 
     @BeforeMethod
     public void init() {
+        coraLogger = new CoraLoggerSpy();
         initiateDefaultFedoraReaderConverterFactory();
         initiateDefaultHttpHandlerFactory();
 
@@ -44,12 +49,12 @@ public class FedoraReaderTestBase {
         XMLXPathParserFactory xmlxPathParserFactory = xmlxPathParserFactorySpy;
         HttpHandlerFactory httpHandlerFactory = httpHandlerFactorySpy;
         FedoraReaderConverterFactory fedoraReaderConverterFactory = fedoraReaderConverterFactorySpy;
-        fedoraReaderFactory = new FedoraReaderFactoryImp(fedoraReaderConverterFactory, httpHandlerFactory, xmlxPathParserFactory, SOME_BASE_URL);
+        fedoraReaderFactory = new FedoraReaderFactoryImp(fedoraReaderConverterFactory, httpHandlerFactory, xmlxPathParserFactory, SOME_BASE_URL, coraLogger);
     }
 
     private void initiateDefaultFedoraReaderConverterFactory() {
         fedoraReaderConverterFactorySpy = new FedoraReaderConverterFactorySpy();
-        fedoraReaderConverterSpy = new FedoraReaderConverterSpy(SOME_BASE_URL);
+        fedoraReaderConverterSpy = new FedoraReaderConverterSpy();
         fedoraReaderConverterFactorySpy.fedoraReaderConverterSpy = fedoraReaderConverterSpy;
     }
 
@@ -59,74 +64,62 @@ public class FedoraReaderTestBase {
         httpHandlerFactorySpy.httpHandlerSpy = httpHandlerSpy;
     }
 
-    void createPagedHttpHandlersForReadList(String type, List<String> pidList, List<Boolean> livePage, int pageSize) {
+    List<String> getSomePidList(Integer... integers) {
+        return Arrays.stream(integers)
+                .map(this::pidNameFromNumber)
+                .collect(Collectors.toList());
+    }
+
+    List<Integer> getSomePidAccessCountList(Integer... integers) {
+        return Arrays.stream(integers)
+                .collect(Collectors.toList());
+    }
+
+    private String pidNameFromNumber(int number) {
+        return String.format("somePid:%05d", number);
+    }
+
+    void createPagedHttpHandlersForReadList(String type, List<String> pidList, List<Integer> pidAccessCountList, int pageSize) {
         String typeQuery = SOME_TYPE_QUERY + type;
         fedoraReaderConverterSpy.queryForType = typeQuery;
 
-        int pidCount = pidList.size();
-        if (pidCount < pageSize) {
-            if(livePage.get(0)) {
-                pidList.forEach(this::createExpectedHandlerForPid);
-            } else {
-                pidList.forEach(this::createUnexpectedHandlerForPid);
-            }
+        assert(pidList.size() == pidAccessCountList.size());
+        for(int idx = 0; idx < pidList.size(); idx++) {
+            createHandlerForPid(pidList.get(idx), pidAccessCountList.get(idx));
+        }
 
+        if (pidList.size() < pageSize) {
             setupHandlersForRequestWithPidResult(
                     typeQuery,
                     SOME_TYPE_REQUEST_XML_RESPONSE + type,
                     1,false,
                     pidList);
         } else {
-            List<String> livePidList = pidList.subList(0, pageSize);
-            if(livePage.get(0)) {
-                livePidList.forEach(this::createExpectedHandlerForPid);
-            } else {
-                livePidList.forEach(this::createUnexpectedHandlerForPid);
-            }
             setupHandlersForRequestWithPidResult(
                     typeQuery,
                     getTypeRequestQueryWithCursor(type, 0),
                     1,true,
-                    livePidList);
+                    pidList.subList(0, pageSize));
 
             int idx = 1;
-            for (; (idx + 1) * pageSize < pidCount; idx++) {
-                List<String> pidList1 = pidList.subList(pageSize * idx, pageSize * idx + 1);
-                if(livePage.get(idx)) {
-                    pidList1.forEach(this::createExpectedHandlerForPid);
-                } else {
-                    pidList1.forEach(this::createUnexpectedHandlerForPid);
-                }
+            for (; (idx + 1) * pageSize < pidList.size(); idx++) {
                 setupHandlersForRequestWithPidResult(
                         getTypeRequestQueryWithCursor(type, idx - 1),
                         getTypeRequestQueryWithCursor(type, idx),
                         1,true,
-                        pidList1);
+                        pidList.subList(pageSize * idx, pageSize * (idx + 1)));
             }
-            List<String> pidList1 = pidList.subList(pageSize * idx, pidList.size());
-            if(livePage.get(idx)) {
-                pidList1.forEach(this::createExpectedHandlerForPid);
-            } else {
-                pidList1.forEach(this::createUnexpectedHandlerForPid);
-            }
-            pidList1.forEach(this::createUnexpectedHandlerForPid);
 
             setupHandlersForRequestWithPidResult(
                     getTypeRequestQueryWithCursor(type, idx - 1),
                     "finalXmlResponse",
                     1,false,
-                    pidList1);
+                    pidList.subList(pageSize * idx, pidList.size()));
         }
     }
 
-    private void createExpectedHandlerForPid(String pid) {
-        httpHandlerSpy.addQueryResponse(pid, SOME_PID_REQUEST_XML_RESPONSE + pid, 1);
-        xmlxPathParserSpy.addXml(SOME_PID_REQUEST_XML_RESPONSE + pid);
-        fedoraReaderConverterSpy.addQueryForId(pid, pid);
-    }
-
-    private void createUnexpectedHandlerForPid(String pid) {
-        httpHandlerSpy.addQueryResponse(pid, SOME_PID_REQUEST_XML_RESPONSE + pid, 0);
+    private void createHandlerForPid(String pid, int accessCount) {
+        httpHandlerSpy.addQueryResponse(pid, SOME_PID_REQUEST_XML_RESPONSE + pid, accessCount);
         xmlxPathParserSpy.addXml(SOME_PID_REQUEST_XML_RESPONSE + pid);
         fedoraReaderConverterSpy.addQueryForId(pid, pid);
     }

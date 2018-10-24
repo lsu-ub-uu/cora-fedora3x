@@ -7,9 +7,8 @@ import se.uu.ub.cora.fedora.reader.converter.FedoraReaderConverter;
 
 public class FedoraReaderConverterWithUnavailableConstructor extends FedoraReaderConverter {
 
-
-    private FedoraReaderConverterWithUnavailableConstructor(String baseUrl) {
-        super(baseUrl);
+    private FedoraReaderConverterWithUnavailableConstructor() {
+        super();
     }
 
     @Override
