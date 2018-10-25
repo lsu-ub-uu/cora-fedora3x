@@ -16,6 +16,12 @@ public abstract class FedoraTypeRestQueryInterface {
 
     protected final String type;
 
+    protected int maxResults = 100;
+
+    public int getMaxResults() { return maxResults; }
+
+    public void setMaxResults(int maxResults) { this.maxResults = maxResults; }
+
     public abstract String getQueryForObjectId(String id) throws FedoraReaderConverterException;
 
     public abstract String getQueryForList(DataGroup filter);

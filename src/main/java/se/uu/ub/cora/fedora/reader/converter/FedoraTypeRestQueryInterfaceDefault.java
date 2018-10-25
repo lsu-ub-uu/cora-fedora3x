@@ -15,16 +15,16 @@ public class FedoraTypeRestQueryInterfaceDefault extends FedoraTypeRestQueryInte
 
     @Override
     public String getQueryForObjectId(String id) {
-        return super.baseUrl + "/fedora/" + super.type + "/" + id;
+        return String.format("%s/objects/%s/datastreams/METADATA/content", super.baseUrl, id);
     }
 
     @Override
     public String getQueryForList(DataGroup filter) {
-        return null;
+        return String.format("%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*", super.baseUrl, super.maxResults, super.type);
     }
 
     @Override
     public String getQueryForList(DataGroup filter, FedoraReaderCursor cursor) {
-        return null;
+        return String.format("%s/objects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*", super.baseUrl, cursor.getToken(), super.maxResults, super.type);
     }
 }
