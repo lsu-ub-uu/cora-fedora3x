@@ -1,17 +1,17 @@
 package se.uu.ub.cora.fedora.reader;
 
 import org.testng.annotations.BeforeMethod;
-import se.uu.ub.cora.fedora.CoraLogger;
+
 import se.uu.ub.cora.fedora.CoraLoggerSpy;
 import se.uu.ub.cora.fedora.data.*;
-import se.uu.ub.cora.fedora.reader.converter.FedoraReaderConverterFactory;
-import se.uu.ub.cora.fedora.reader.converter.FedoraReaderConverterFactorySpy;
-import se.uu.ub.cora.fedora.reader.converter.FedoraReaderConverterSpy;
+import se.uu.ub.cora.fedora.reader.converter.*;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.testng.Assert.assertEquals;
 
 public class FedoraReaderTestBase {
     static final String SOME_TYPE = "someType";
@@ -25,11 +25,13 @@ public class FedoraReaderTestBase {
     static final String SOME_PID_REQUEST_XML_RESPONSE = "someXmlPidResponse:";
 
     FedoraReaderFactory fedoraReaderFactory;
-    CoraLogger coraLogger;
+    CoraLoggerSpy coraLogger;
     FedoraReaderConverterFactorySpy fedoraReaderConverterFactorySpy;
     FedoraReaderConverterSpy fedoraReaderConverterSpy;
+    FedoraReadPositionConverterSpy fedoraReadPositionConverterSpy;
+    FedoraTypeRestQuerySpy fedoraTypeRestQuerySpy;
 
-    XMLXPathParserFactorySpy xmlxPathParserFactorySpy;
+    XMLXPathParserFactorySpy xmlXPathParserFactorySpy;
     XMLXPathParserSpy xmlxPathParserSpy;
     FedoraReaderXmlHelperSpy fedoraReaderXmlHelperSpy;
 
@@ -43,19 +45,29 @@ public class FedoraReaderTestBase {
         initiateDefaultFedoraReaderConverterFactory();
         initiateDefaultHttpHandlerFactory();
 
-        xmlxPathParserFactorySpy = new XMLXPathParserFactorySpy();
-        xmlxPathParserSpy = xmlxPathParserFactorySpy.parserSpy;
-        fedoraReaderXmlHelperSpy = xmlxPathParserFactorySpy.helperSpy;
-        XMLXPathParserFactory xmlxPathParserFactory = xmlxPathParserFactorySpy;
+        xmlXPathParserFactorySpy = new XMLXPathParserFactorySpy();
+        xmlxPathParserSpy = xmlXPathParserFactorySpy.parserSpy;
+        fedoraReaderXmlHelperSpy = xmlXPathParserFactorySpy.helperSpy;
+        XMLXPathParserFactory xmlxPathParserFactory = xmlXPathParserFactorySpy;
         HttpHandlerFactory httpHandlerFactory = httpHandlerFactorySpy;
         FedoraReaderConverterFactory fedoraReaderConverterFactory = fedoraReaderConverterFactorySpy;
-        fedoraReaderFactory = new FedoraReaderFactoryImp(fedoraReaderConverterFactory, httpHandlerFactory, xmlxPathParserFactory, SOME_BASE_URL, coraLogger);
+
+        fedoraReaderFactory = new FedoraReaderFactoryImp(fedoraReaderConverterFactory,
+                httpHandlerFactory, xmlxPathParserFactory, SOME_BASE_URL, coraLogger);
     }
 
     private void initiateDefaultFedoraReaderConverterFactory() {
-        fedoraReaderConverterFactorySpy = new FedoraReaderConverterFactorySpy();
+        fedoraReadPositionConverterSpy = new FedoraReadPositionConverterSpy();
+
+        fedoraTypeRestQuerySpy = new FedoraTypeRestQuerySpy(SOME_BASE_URL, SOME_TYPE);
+        fedoraReadPositionConverterSpy.fedoraTypeRestQuerySpy = fedoraTypeRestQuerySpy;
+
         fedoraReaderConverterSpy = new FedoraReaderConverterSpy();
-        fedoraReaderConverterFactorySpy.fedoraReaderConverterSpy = fedoraReaderConverterSpy;
+        fedoraReadPositionConverterSpy.fedoraReaderConverterSpy = fedoraReaderConverterSpy;
+
+        fedoraReaderConverterFactorySpy = new FedoraReaderConverterFactorySpy();
+        fedoraReaderConverterFactorySpy.fedoraReadPositionConverterSpy = fedoraReadPositionConverterSpy;
+        fedoraReaderConverterFactorySpy.fedoraReadPositionConverterSpy.fedoraReaderConverterSpy = fedoraReaderConverterSpy;
     }
 
     private void initiateDefaultHttpHandlerFactory() {
@@ -75,20 +87,37 @@ public class FedoraReaderTestBase {
                 .collect(Collectors.toList());
     }
 
+    void assertLogHasSingleMessage(String message) {
+        assertEquals(coraLogger.getLog().size(), 1);
+        assertEquals(coraLogger.getLog().get(0), message);
+    }
+
     private String pidNameFromNumber(int number) {
         return String.format("somePid:%05d", number);
     }
 
+    void createPagedHttpHandlersForReadList(String type, List<String> pidList) {
+        createPagedHttpHandlersForReadList(type, pidList,
+                pidList.stream().map(itm -> 1).collect(Collectors.toList()),
+                pidList.size());
+    }
+
+    void createPagedHttpHandlersForReadList(String type, List<String> pidList, int pageSize) {
+        createPagedHttpHandlersForReadList(type, pidList,
+                pidList.stream().map(itm -> 1).collect(Collectors.toList()),
+                pageSize);
+    }
+
     void createPagedHttpHandlersForReadList(String type, List<String> pidList, List<Integer> pidAccessCountList, int pageSize) {
         String typeQuery = SOME_TYPE_QUERY + type;
-        fedoraReaderConverterSpy.queryForType = typeQuery;
+        fedoraTypeRestQuerySpy.queryForType = typeQuery;
 
         assert(pidList.size() == pidAccessCountList.size());
         for(int idx = 0; idx < pidList.size(); idx++) {
             createHandlerForPid(pidList.get(idx), pidAccessCountList.get(idx));
         }
 
-        if (pidList.size() < pageSize) {
+        if (pidList.size() <= pageSize) {
             setupHandlersForRequestWithPidResult(
                     typeQuery,
                     SOME_TYPE_REQUEST_XML_RESPONSE + type,
@@ -121,7 +150,7 @@ public class FedoraReaderTestBase {
     private void createHandlerForPid(String pid, int accessCount) {
         httpHandlerSpy.addQueryResponse(pid, SOME_PID_REQUEST_XML_RESPONSE + pid, accessCount);
         xmlxPathParserSpy.addXml(SOME_PID_REQUEST_XML_RESPONSE + pid);
-        fedoraReaderConverterSpy.addQueryForId(pid, pid);
+        fedoraTypeRestQuerySpy.addQueryForId(pid, pid, accessCount);
     }
 
     private String getTypeRequestQueryWithCursor(String type, int cursor) {

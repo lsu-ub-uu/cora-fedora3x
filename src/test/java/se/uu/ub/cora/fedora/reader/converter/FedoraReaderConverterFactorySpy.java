@@ -1,18 +1,46 @@
 package se.uu.ub.cora.fedora.reader.converter;
 
 public class FedoraReaderConverterFactorySpy implements FedoraReaderConverterFactory {
-    public FedoraReaderConverterSpy fedoraReaderConverterSpy = null;
+    public FedoraReadPositionConverterSpy fedoraReadPositionConverterSpy = null;
     public int factorCount = 0;
     public boolean noConverters = false;
 
     @Override
-    public FedoraReaderConverter factorConverter(String type) throws FedoraReaderConverterFactoryException {
+    public FedoraReadPositionConverter factor(String type) throws FedoraReaderConverterFactoryException {
         factorCount++;
         if(noConverters) {
             throw new FedoraReaderConverterFactoryException(type + " does not have a registered converter");
         }
-        fedoraReaderConverterSpy.factorFor(type);
-        return fedoraReaderConverterSpy;
+        fedoraReadPositionConverterSpy.factorFor(type);
+        return fedoraReadPositionConverterSpy;
+    }
+
+    @Override
+    public FedoraReadPositionConverter factor(String type, long start) throws FedoraReaderConverterFactoryException {
+        factorCount++;
+        if(noConverters) {
+            throw new FedoraReaderConverterFactoryException(type + " does not have a registered converter");
+        }
+        fedoraReadPositionConverterSpy.factorFor(type);
+        fedoraReadPositionConverterSpy.start = start;
+        return fedoraReadPositionConverterSpy;
+    }
+
+    @Override
+    public FedoraReadPositionConverter factor(String type, long start, long stop) throws FedoraReaderConverterFactoryException {
+        factorCount++;
+        if(noConverters) {
+            throw new FedoraReaderConverterFactoryException(type + " does not have a registered converter");
+        }
+        fedoraReadPositionConverterSpy.factorFor(type);
+        fedoraReadPositionConverterSpy.start = start;
+        fedoraReadPositionConverterSpy.stop = stop;
+        return fedoraReadPositionConverterSpy;
+    }
+
+    @Override
+    public FedoraReaderConverter factorConverter(String type) throws FedoraReaderConverterFactoryException {
+        return null;
     }
 
     @Override
@@ -21,7 +49,7 @@ public class FedoraReaderConverterFactorySpy implements FedoraReaderConverterFac
     }
 
     @Override
-    public void registerTypeRestQueryInterface(Class<? extends FedoraTypeRestQueryInterface> fedoraTypeRestQueryInterface) throws FedoraReaderConverterFactoryException {
+    public void registerTypeRestQueryInterface(Class<? extends FedoraTypeRestQuery> fedoraTypeRestQueryInterface) throws FedoraReaderConverterFactoryException {
 
     }
 
@@ -35,17 +63,17 @@ public class FedoraReaderConverterFactorySpy implements FedoraReaderConverterFac
     }
 
     @Override
-    public FedoraTypeRestQueryInterface factorTypeRestQueryInterface(String someType) {
+    public FedoraTypeRestQuery factorTypeRestQueryInterface(String someType) {
         return null;
     }
 
     @Override
-    public Class<? extends FedoraTypeRestQueryInterface> getDefaultTypeRestQueryInterface() {
+    public Class<? extends FedoraTypeRestQuery> getDefaultTypeRestQueryInterface() {
         return null;
     }
 
     @Override
-    public void setDefaultTypeRestQueryInterface(Class<? extends FedoraTypeRestQueryInterface> defaultTypeRestQueryInterfaceClass) {
+    public void setDefaultTypeRestQueryInterface(Class<? extends FedoraTypeRestQuery> defaultTypeRestQueryInterfaceClass) {
 
     }
 

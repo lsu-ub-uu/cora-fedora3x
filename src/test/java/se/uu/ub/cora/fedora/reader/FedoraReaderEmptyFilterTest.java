@@ -5,15 +5,12 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
-import se.uu.ub.cora.fedora.reader.converter.FedoraReaderConverterSpy;
 import se.uu.ub.cora.spider.data.SpiderReadResult;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
@@ -35,7 +32,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
 
-        assertEquals(fedoraReaderConverterSpy.getTypeCountFor(SOME_TYPE), 1);
+        assertEquals(fedoraReadPositionConverterSpy.getTypeCountFor(SOME_TYPE), 1);
     }
 
 
@@ -46,25 +43,26 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
         reader.read("someOtherType", SOME_OBJECT_ID);
 
-        assertEquals(fedoraReaderConverterSpy.getTypeCountFor(SOME_TYPE), 1);
-        assertEquals(fedoraReaderConverterSpy.getTypeCountFor("someOtherType"), 1);
+        assertEquals(fedoraReadPositionConverterSpy.getTypeCountFor(SOME_TYPE), 1);
+        assertEquals(fedoraReadPositionConverterSpy.getTypeCountFor("someOtherType"), 1);
     }
 
     @Test
     public void testReadingAnObjectWithIdAndTypeShouldRequestUrlForObjectIdFromFedoraConverter() throws FedoraReaderException {
         FedoraReader reader = fedoraReaderFactory.factor();
+        fedoraTypeRestQuerySpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY, 1);
 
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
 
-        assertEquals(fedoraReaderConverterSpy.queryForIdCalls, 1);
-        assertEquals(fedoraReaderConverterSpy.getPidCountFor(SOME_OBJECT_ID), 1);
+        assertEquals(fedoraTypeRestQuerySpy.queryForIdCalls, 1);
+        assertEquals(fedoraTypeRestQuerySpy.getPidCountFor(SOME_OBJECT_ID), 0);
     }
 
     @Test
     public void testReadingAnObjectWithIdAndTypeShouldProduceExpectedUrlInFirstCallToTheOnlyFactoredHttpHandler() throws FedoraReaderException {
         FedoraReader reader = fedoraReaderFactory.factor();
 
-        fedoraReaderConverterSpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY);
+        fedoraTypeRestQuerySpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY, 1);
 
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
 
@@ -74,15 +72,34 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         assertEquals(httpHandlerSpy.getUrlCountCallFor(SOME_PID_QUERY), 0);
     }
 
-    @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "Cannot create URL for someObjectId")
+    @Test
     public void testReadingAnObjectWithBadId() throws FedoraReaderException {
-        FedoraReaderConverterSpy fedoraReaderConverterSpy = new FedoraReaderConverterSpy();
-        fedoraReaderConverterSpy.badId = SOME_OBJECT_ID;
-
-        fedoraReaderConverterFactorySpy.fedoraReaderConverterSpy = fedoraReaderConverterSpy;
+        fedoraTypeRestQuerySpy.badId = SOME_OBJECT_ID;
         FedoraReader reader = fedoraReaderFactory.factor();
 
+        var result =  reader.read(SOME_TYPE, SOME_OBJECT_ID);
+
+        assertNull(result);
+
+        assertLogHasSingleMessage("Cannot create URL for someObjectId");
+    }
+
+    @Test
+    public void testReadingAnObjectWithBadIdAndNoLogger() throws FedoraReaderException {
+        fedoraTypeRestQuerySpy.badId = SOME_OBJECT_ID;
+        coraLogger = null;
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        var result =  reader.read(SOME_TYPE, SOME_OBJECT_ID);
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testLoggerWasPassedOnToFedoraReadPositionConverter() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
+        assertEquals(fedoraReadPositionConverterSpy.logger, coraLogger);
     }
 
 
@@ -92,14 +109,14 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
 
-        assertEquals(xmlxPathParserFactorySpy.factorCallCount, 1);
+        assertEquals(xmlXPathParserFactorySpy.factorCallCount, 1);
     }
 
     @Test
     public void testReadingAnObjectShouldTryToParseSomeXML() throws FedoraReaderException {
         FedoraReader reader = fedoraReaderFactory.factor();
 
-        fedoraReaderConverterSpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY);
+        fedoraTypeRestQuerySpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY, 1);
         httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE,1);
 
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
@@ -112,7 +129,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
     public void testReadingAnObjectShouldTryToConvertReceivedXML() throws FedoraReaderException {
         FedoraReader reader = fedoraReaderFactory.factor();
 
-        fedoraReaderConverterSpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY);
+        fedoraTypeRestQuerySpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY, 1);
         httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE,1);
         xmlxPathParserSpy.addXml(SOME_PID_REQUEST_XML_RESPONSE);
 
@@ -125,33 +142,42 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         assertEquals(actual, expected);
     }
 
-    @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "XML cannot be converted to someType")
+    @Test
     public void testReadingAnObjectShouldThrowIfItFailsToConvertReceivedXML() throws FedoraReaderException {
+
+        fedoraTypeRestQuerySpy.addQueryForId(SOME_OBJECT_ID, SOME_OBJECT_ID, 1);
+        httpHandlerSpy.addQueryResponse(SOME_OBJECT_ID, SOME_PID_REQUEST_XML_RESPONSE + SOME_OBJECT_ID, 1);
+        xmlxPathParserSpy.addXml(SOME_PID_REQUEST_XML_RESPONSE + SOME_OBJECT_ID);
+
         fedoraReaderConverterSpy.uselessXml = true;
 
         FedoraReader reader = fedoraReaderFactory.factor();
 
-        reader.read(SOME_TYPE, SOME_OBJECT_ID);
+        assertNull(reader.read(SOME_TYPE, SOME_OBJECT_ID));
+        assertLogHasSingleMessage("XML cannot be converted to someType");
     }
 
-    @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "someType does not have a registered converter")
+    @Test
     public void testReadObjectWithNoRegisteredConverterShouldThrow() throws FedoraReaderException {
         FedoraReader reader = fedoraReaderFactory.factor();
 
         fedoraReaderConverterFactorySpy.noConverters = true;
 
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
+        assertLogHasSingleMessage("someType does not have a registered converter");
     }
 
-    @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "Could not parse XML")
+    @Test
     public void testReadingObjectWithXmlThatCannotBeParsedShouldThrow() throws FedoraReaderException {
         FedoraReader reader = fedoraReaderFactory.factor();
 
-        fedoraReaderConverterSpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY);
+        fedoraTypeRestQuerySpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY, 1);
         httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE,1);
         xmlxPathParserSpy.addInvalidXml(SOME_PID_REQUEST_XML_RESPONSE);
 
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
+
+        assertLogHasSingleMessage("Could not parse XML");
     }
 
     @Test
@@ -160,7 +186,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
         reader.readList(SOME_TYPE, EMPTY_FILTER);
 
-        assertEquals(fedoraReaderConverterSpy.getTypeCountFor(SOME_TYPE), 1);
+        assertEquals(fedoraReadPositionConverterSpy.getTypeCountFor(SOME_TYPE), 1);
     }
 
     @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "someType does not have a registered converter")
@@ -176,7 +202,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
     public void testReadListWithTypeShouldProduceExpectedUrlInFirstCallToHttpHandlerSpy() throws FedoraReaderException {
         FedoraReader reader = fedoraReaderFactory.factor();
 
-        fedoraReaderConverterSpy.queryForType = SOME_TYPE_QUERY;
+        fedoraTypeRestQuerySpy.queryForType = SOME_TYPE_QUERY;
         httpHandlerSpy.addQueryResponse(SOME_TYPE_QUERY, SOME_TYPE_REQUEST_XML_RESPONSE, 1);
 
         reader.readList(SOME_TYPE, EMPTY_FILTER);
@@ -192,38 +218,40 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
         reader.readList(SOME_TYPE, EMPTY_FILTER);
 
-        assertEquals(xmlxPathParserFactorySpy.factorCallCount, 1);
+        assertEquals(xmlXPathParserFactorySpy.factorCallCount, 1);
     }
 
     @Test
     public void testReadListShouldSendSomeXMLToTheXMLParser() throws FedoraReaderException {
         FedoraReader reader = fedoraReaderFactory.factor();
 
-        fedoraReaderConverterSpy.queryForType = SOME_TYPE_QUERY;
+        fedoraTypeRestQuerySpy.queryForType = SOME_TYPE_QUERY;
         httpHandlerSpy.addQueryResponse(SOME_TYPE_QUERY, SOME_TYPE_REQUEST_XML_RESPONSE, 1);
         reader.readList(SOME_TYPE, EMPTY_FILTER);
 
-        assertEquals(xmlxPathParserFactorySpy.factorCallCount, 1);
+        assertEquals(xmlXPathParserFactorySpy.factorCallCount, 1);
         assertEquals(xmlxPathParserSpy.getLastParsedXml(), SOME_TYPE_REQUEST_XML_RESPONSE);
     }
 
-    @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "Could not parse XML")
-    public void testReadListShouldSendSomeXMLToTheXMLParserAndIfItsBadTheParserShouldThrow() throws FedoraReaderException {
+    @Test
+    public void testReadListShouldSendSomeXMLToTheXMLParserAndIfItsBadAnErrorShouldBeLogged() throws FedoraReaderException {
         FedoraReader reader = fedoraReaderFactory.factor();
 
-        fedoraReaderConverterSpy.queryForType = SOME_TYPE_QUERY;
+        fedoraTypeRestQuerySpy.queryForType = SOME_TYPE_QUERY;
         httpHandlerSpy.addQueryResponse(SOME_TYPE_QUERY, SOME_TYPE_REQUEST_XML_RESPONSE, 1);
 
         xmlxPathParserSpy.addInvalidXml(SOME_TYPE_REQUEST_XML_RESPONSE);
 
         reader.readList(SOME_TYPE, EMPTY_FILTER);
+
+        assertLogHasSingleMessage("Could not parse XML");
     }
 
     @Test
     public void testReadListConverterShouldGetXMLToParsePidListFrom() throws FedoraReaderException {
         List<String> somePidList = getSomePidList(1, 2, 3);
 
-        createHttpHandlersForReadList(SOME_TYPE, somePidList);
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList);
 
         FedoraReader reader = fedoraReaderFactory.factor();
 
@@ -234,30 +262,15 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         assertTrue(httpHandlerSpy.allCallsAccountedFor());
     }
 
-    private void createHttpHandlersForReadList(String type, List<String> pidList) {
-        String typeQuery = SOME_TYPE_QUERY + type;
-        fedoraReaderConverterSpy.queryForType = typeQuery;
-        String typeResponseXml = SOME_TYPE_REQUEST_XML_RESPONSE + type;
-        httpHandlerSpy.addQueryResponse(typeQuery, typeResponseXml, 1);
-        xmlxPathParserSpy.addXml(typeResponseXml);
-        fedoraReaderXmlHelperSpy.addPidListForXml(typeResponseXml, false, pidList);
-
-        for (var pid : pidList) {
-            String pidQuery = SOME_PID_QUERY + pid;
-            fedoraReaderConverterSpy.addQueryForId(pid, pidQuery);
-            String pidResponseXml = SOME_PID_REQUEST_XML_RESPONSE + pid;
-            httpHandlerSpy.addQueryResponse(pidQuery, pidResponseXml, 1);
-            xmlxPathParserSpy.addXml(pidResponseXml);
-        }
-    }
-
-    @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "pid extraction failed")
+    @Test
     public void testReadListConverterShouldGetXMLToParsePidListFromAndThrowIfPidListIsBad() throws FedoraReaderException {
         FedoraReader reader = fedoraReaderFactory.factor();
 
         fedoraReaderXmlHelperSpy.failPidExtraction = true;
 
         reader.readList(SOME_TYPE, EMPTY_FILTER);
+
+        assertLogHasSingleMessage("pid extraction failed");
     }
 
     @Test
@@ -269,13 +282,13 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         List<String> somePidList = new ArrayList<>();
         somePidList.add(somePid);
 
-        createHttpHandlersForReadList(SOME_TYPE, somePidList);
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList);
 
         reader.readList(SOME_TYPE, EMPTY_FILTER);
 
-        assertEquals(fedoraReaderConverterSpy.queryForTypeCalls, 1);
+        assertEquals(fedoraTypeRestQuerySpy.queryForTypeCalls, 1);
 
-        assertEquals(fedoraReaderConverterSpy.getPidCountFor(somePid), 1);
+        assertEquals(fedoraTypeRestQuerySpy.getPidCountFor(somePid), 0);
         assertTrue(httpHandlerSpy.allCallsAccountedFor());
     }
 
@@ -285,19 +298,67 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
         List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
 
-        createHttpHandlersForReadList(SOME_TYPE, somePidList);
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList);
 
         reader.readList(SOME_TYPE, EMPTY_FILTER);
 
 
-        assertEquals(fedoraReaderConverterSpy.queryForTypeCalls, 1);
+        assertEquals(fedoraTypeRestQuerySpy.queryForTypeCalls, 1);
 
         for (var somePid : somePidList) {
-            assertEquals(fedoraReaderConverterSpy.getPidCountFor(somePid), 1);
+            assertEquals(fedoraTypeRestQuerySpy.getPidCountFor(somePid), 0);
         }
 
         assertTrue(httpHandlerSpy.allCallsAccountedFor());
     }
+
+
+    @Test
+    public void testReadListShouldLogAnErrorIfTheConverterFailsForAPid() throws FedoraReaderException {
+        FedoraReader reader = fedoraReaderFactory.factor();
+
+        List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList);
+
+        fedoraReaderConverterSpy.failForPidInList.add(
+            httpHandlerSpy.urlResponse.get(somePidList.get(2)));
+
+        reader.readList(SOME_TYPE, EMPTY_FILTER);
+
+        assertEquals(fedoraTypeRestQuerySpy.queryForTypeCalls, 1);
+
+        for (var somePid : somePidList) {
+            assertEquals(fedoraTypeRestQuerySpy.getPidCountFor(somePid), 0);
+        }
+
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+        assertLogHasSingleMessage("XML cannot be converted to someType");
+    }
+
+    @Test
+    public void testReadListShouldLogAnErrorIfTheConverterFailsForAPidButNotWithNoLogger() throws FedoraReaderException {
+        coraLogger = null;
+        fedoraReadPositionConverterSpy.logger = null;
+        FedoraReader reader = fedoraReaderFactory.factor();
+        List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList);
+
+        fedoraReaderConverterSpy.failForPidInList.add(
+                httpHandlerSpy.urlResponse.get(somePidList.get(2)));
+
+        reader.readList(SOME_TYPE, EMPTY_FILTER);
+
+        assertEquals(fedoraTypeRestQuerySpy.queryForTypeCalls, 1);
+
+        for (var somePid : somePidList) {
+            assertEquals(fedoraTypeRestQuerySpy.getPidCountFor(somePid), 0);
+        }
+
+        assertTrue(httpHandlerSpy.allCallsAccountedFor());
+    }
+
 
     @Test
     public void testReadListFindingSeveralPidShouldYieldYetMoreCallsForUrlsToHttpFactory() throws FedoraReaderException {
@@ -306,12 +367,12 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
         var pidCount = somePidList.size();
 
-        createHttpHandlersForReadList(SOME_TYPE, somePidList);
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList);
 
         reader.readList(SOME_TYPE, EMPTY_FILTER);
 
-        Assert.assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1 + pidCount);
-        assertEquals(xmlxPathParserFactorySpy.factorCallCount, 1 + pidCount);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1 + pidCount);
+        assertEquals(xmlXPathParserFactorySpy.factorCallCount, 1 + pidCount);
         assertTrue(httpHandlerSpy.allCallsAccountedFor());
         assertEquals(fedoraReaderConverterSpy.convertCalls, pidCount);
     }
@@ -321,7 +382,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         FedoraReader reader = fedoraReaderFactory.factor();
         List<String> somePidList = getSomePidList(1);
 
-        createHttpHandlersForReadList(SOME_TYPE, somePidList);
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList);
 
         SpiderReadResult result = reader.readList(SOME_TYPE, EMPTY_FILTER);
 
@@ -337,7 +398,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         FedoraReader reader = fedoraReaderFactory.factor();
         List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
 
-        createHttpHandlersForReadList(SOME_TYPE, somePidList);
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList);
 
         SpiderReadResult result = reader.readList(SOME_TYPE, EMPTY_FILTER);
 
@@ -354,9 +415,8 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
         int pageSize = 3;
         List<String> somePidList = getSomePidList(2, 3, 5, 7, 11);
-        List<Integer> somePidListAccessCounts = somePidList.stream().map(itm -> 1).collect(Collectors.toList());
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, somePidListAccessCounts, pageSize);
+        createPagedHttpHandlersForReadList(SOME_TYPE, somePidList, pageSize);
 
         SpiderReadResult result = reader.readList(SOME_TYPE, EMPTY_FILTER);
 
@@ -390,4 +450,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
         assertEquals(result.totalNumberOfMatches, totalSize);
         assertTrue(httpHandlerSpy.allCallsAccountedFor());
     }
+
+
+
 }

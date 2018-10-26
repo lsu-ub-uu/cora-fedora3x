@@ -12,10 +12,10 @@ public class HttpHandlerFactorySpy implements HttpHandlerFactory {
 
     @Override
     public HttpHandler factor(String url) {
+        factoredHttpHandlers++;
         if(couldNotFactorForUrl) {
             throw new RuntimeException("HttpHandlerFactory did not have a handler for: " + url);
         }
-        factoredHttpHandlers++;
         httpHandlerSpy.wasCalledWith(url);
         return httpHandlerSpy;
     }

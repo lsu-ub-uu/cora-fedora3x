@@ -1,175 +1,182 @@
 package se.uu.ub.cora.fedora.reader;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import se.uu.ub.cora.bookkeeper.data.DataElement;
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
 import se.uu.ub.cora.fedora.CoraLogger;
-import se.uu.ub.cora.fedora.reader.converter.*;
-import se.uu.ub.cora.fedora.data.*;
+import se.uu.ub.cora.fedora.data.FedoraReaderCursor;
+import se.uu.ub.cora.fedora.data.FedoraReaderPidListWithOptionalCursor;
+import se.uu.ub.cora.fedora.data.XMLXPathParser;
+import se.uu.ub.cora.fedora.data.XMLXPathParserException;
+import se.uu.ub.cora.fedora.data.XMLXPathParserFactory;
+import se.uu.ub.cora.fedora.reader.converter.FedoraReadPositionConverter;
+import se.uu.ub.cora.fedora.reader.converter.FedoraReaderConverter;
+import se.uu.ub.cora.fedora.reader.converter.FedoraReaderConverterException;
+import se.uu.ub.cora.fedora.reader.converter.FedoraReaderConverterFactory;
+import se.uu.ub.cora.fedora.reader.converter.FedoraReaderConverterFactoryException;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 import se.uu.ub.cora.spider.data.SpiderReadResult;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
-
 public class FedoraReaderImp implements FedoraReader {
-    private FedoraReaderConverterFactory fedoraReaderConverterFactory;
-    private HttpHandlerFactory httpHandlerFactory;
-    private XMLXPathParserFactory xmlxPathParserFactory;
-    private CoraLogger logger;
+	private FedoraReaderConverterFactory fedoraReaderConverterFactory;
+	private HttpHandlerFactory httpHandlerFactory;
+	private XMLXPathParserFactory xmlxPathParserFactory;
+	private CoraLogger logger;
 
-    public FedoraReaderImp(FedoraReaderConverterFactory fedoraReaderConverterFactory, HttpHandlerFactory httpHandlerFactory, XMLXPathParserFactory xmlxPathParserFactory, CoraLogger logger) {
-        this.fedoraReaderConverterFactory = fedoraReaderConverterFactory;
-        this.httpHandlerFactory = httpHandlerFactory;
-        this.xmlxPathParserFactory = xmlxPathParserFactory;
-        this.logger = logger;
-    }
+	public FedoraReaderImp(FedoraReaderConverterFactory fedoraReaderConverterFactory,
+			HttpHandlerFactory httpHandlerFactory, XMLXPathParserFactory xmlxPathParserFactory,
+			CoraLogger logger) {
+		this.fedoraReaderConverterFactory = fedoraReaderConverterFactory;
+		this.httpHandlerFactory = httpHandlerFactory;
+		this.xmlxPathParserFactory = xmlxPathParserFactory;
+		this.logger = logger;
+	}
 
-    @Override
-    public DataElement read(String type, String id) throws FedoraReaderException {
-        try {
-            var converter = fedoraReaderConverterFactory.factorConverter(type);
-            var requestUrl = converter.getQueryForObjectId(id);
-            XMLXPathParser parser = tryGetXmlXPathParserFromFedora(requestUrl);
-            converter.loadXml(parser);
-            return converter.convert();
-        } catch (FedoraReaderConverterFactoryException | XMLXPathParserException | FedoraReaderConverterException e) {
-            throw new FedoraReaderException(e.getMessage(), e);
-        }
-    }
+	@Override
+	public DataElement read(String type, String id) {
+		try {
+			var converter = fedoraReaderConverterFactory.factor(type);
+			converter.setLogger(logger);
+			var requestUrl = converter.getQueryForObjectId(id);
+			XMLXPathParser parser = tryGetXmlXPathParserFromFedora(requestUrl);
+			var objectConverter = converter.getConverter();
+			objectConverter.loadXml(parser);
+			return objectConverter.convert();
+		} catch (FedoraReaderConverterFactoryException | FedoraReaderConverterException e) {
+			log(e.getMessage());
+		}
+		return null;
+	}
 
-    private XMLXPathParser tryGetXmlXPathParserFromFedora(String requestUrl) throws XMLXPathParserException {
-        var responseXml = getResponseXMLForRequest(requestUrl);
-        return getParserForResponseXML(responseXml);
-    }
+	private void log(String message) {
+		if (logger != null) {
+			logger.write(message);
+		} else {
+			throw new RuntimeException(message);
+		}
+	}
 
-    private String getResponseXMLForRequest(String objectUrl) {
-        return httpHandlerFactory.factor(objectUrl).getResponseText();
-    }
+	private XMLXPathParser tryGetXmlXPathParserFromFedora(String requestUrl) {
+		var responseXml = getResponseXMLForRequest(requestUrl);
+		return getParserForResponseXML(responseXml);
+	}
 
-    private XMLXPathParser getParserForResponseXML(String responseXml) throws XMLXPathParserException {
-        return xmlxPathParserFactory.factor().forXML(responseXml);
-    }
+	private String getResponseXMLForRequest(String objectUrl) {
+		return httpHandlerFactory.factor(objectUrl)
+			.getResponseText();
+	}
 
-    @Override
-    public SpiderReadResult readList(String type, DataGroup filter) throws FedoraReaderException {
-        try {
-            var converter = fedoraReaderConverterFactory.factorConverter(type);
-            long start = Long.parseLong(filter.getFirstAtomicValueWithNameInDataOrDefault("start", "1")) - 1;
-            return getSpiderReadResult(filter, converter, pid -> getDataGroupForFedoraPid(converter, pid), start);
-        } catch (FedoraReaderConverterFactoryException | XMLXPathParserException | FedoraReaderConverterException e) {
-            throw new FedoraReaderException(e.getMessage(), e);
-        }
-    }
+	private XMLXPathParser getParserForResponseXML(String responseXml) {
+		XMLXPathParser xmlXPathParser = null;
+		try {
+			xmlXPathParser = xmlxPathParserFactory.factor()
+				.forXML(responseXml);
+		} catch (XMLXPathParserException e) {
+			log(e.getMessage());
+		}
+		return xmlXPathParser;
+	}
 
-    private SpiderReadResult getSpiderReadResult(DataGroup filter, FedoraReaderConverter converter, Function<String, DataGroup> converterLambda, long start) throws XMLXPathParserException, FedoraReaderConverterException {
-        Function<Long, Function<String, DataGroup>> conditionalConverterFunction = getConditionalConverterFunction(filter, converterLambda, start);
-        var spiderReadResult = createEmptySpiderReadResult();
-        return getSpiderReadResultForConverter(null, spiderReadResult, filter, converter, conditionalConverterFunction);
-    }
+	@Override
+	public SpiderReadResult readList(String type, DataGroup filter) throws FedoraReaderException {
+		try {
+			long start = Long
+				.parseLong(filter.getFirstAtomicValueWithNameInDataOrDefault("start", "1")) - 1;
+			boolean limitNumberOfRows = filter.containsChildWithNameInData("rows");
+			FedoraReadPositionConverter fedoraReadPositionConverter;
+			if (limitNumberOfRows) {
+				long rows = Integer
+					.parseInt(filter.getFirstAtomicValueWithNameInDataOrDefault("rows", "1"));
+				fedoraReadPositionConverter = fedoraReaderConverterFactory.factor(type, start,
+						start + rows);
+			} else {
+				fedoraReadPositionConverter = fedoraReaderConverterFactory.factor(type, start);
+			}
+			return getSpiderReadResult(fedoraReadPositionConverter, filter);
+		} catch (FedoraReaderConverterFactoryException e) {
+			throw new FedoraReaderException(e.getMessage(), e);
+		}
+	}
 
-    private Function<Long, Function<String, DataGroup>> getConditionalConverterFunction(DataGroup filter, Function<String, DataGroup> converterLambda, long start) {
-        Function<Long, Function<String, DataGroup>> conditionalConverterFunction;
-        boolean limitNumberOfRows = filter.containsChildWithNameInData("rows");
-        if (limitNumberOfRows) {
-            long rows = Integer.parseInt(filter.getFirstAtomicValueWithNameInDataOrDefault("rows", "1"));
-            conditionalConverterFunction =
-                    FedoraReadPositionConverter.convertFromStartToStop(start, start + rows, converterLambda);
-        } else {
-            conditionalConverterFunction =
-                    FedoraReadPositionConverter.convertFromStart(start, converterLambda);
-        }
-        return conditionalConverterFunction;
-    }
+	private SpiderReadResult getSpiderReadResult(FedoraReadPositionConverter converter,
+			DataGroup filter) {
+		var spiderReadResult = createEmptySpiderReadResult();
+		return getSpiderReadResultForConverter(converter, filter, null, spiderReadResult);
+	}
 
-    private DataGroup getDataGroupForFedoraPid(FedoraReaderConverter converter, String pid) {
-        String pidUrl = tryGetUrlForPid(converter, pid);
-        XMLXPathParser xmlForPid = tryGetXmlXPathParser(pidUrl);
-        converter.loadXml(xmlForPid);
-        return tryConvertXML(converter);
-    }
+	private SpiderReadResult getSpiderReadResultForConverter(FedoraReadPositionConverter converter,
+			DataGroup filter, FedoraReaderCursor cursor, SpiderReadResult spiderReadResult) {
+		List<String> pidList = new ArrayList<>();
+		FedoraReaderCursor nextCursor = null;
+		try {
+			var pidListAndCursor = getFedoraReaderPidListWithOptionalCursorFrom(converter, filter,
+					cursor);
+			pidList = pidListAndCursor.getPidList();
+			nextCursor = pidListAndCursor.getCursor();
+		} catch (XMLXPathParserException e) {
+			log(e.getMessage());
+		}
+		int fedoraReadLength = pidList.size();
 
+		var pidListToConvert = converter.filterPidList(spiderReadResult.totalNumberOfMatches,
+				pidList);
+		List<DataGroup> result = new ArrayList<>();
+		for (var pid : pidListToConvert) {
+			var pidUrl = converter.getQueryForObjectId(pid);
+			result.add(getDataGroupForFedoraPid(converter.getConverter(), pidUrl));
+		}
 
-    private DataGroup tryConvertXML(FedoraReaderConverter converter) {
-        DataGroup result = null;
-        try {
-            result = converter.convert();
-        } catch (FedoraReaderConverterException e) {
-            logger.write(e.getMessage());
-        }
-        return result;
-    }
+		// TODO: handle failing stuff with :
+		// result.stream().filter(Objects::nonNull).collect(Collectors.toList())
+		spiderReadResult.listOfDataGroups.addAll(result);
+		spiderReadResult.totalNumberOfMatches += fedoraReadLength;
 
-    private XMLXPathParser tryGetXmlXPathParser(String pidUrl) {
-        XMLXPathParser xmlForPid = null;
-        try {
-            xmlForPid = tryGetXmlXPathParserFromFedora(pidUrl);
-        } catch (XMLXPathParserException e) {
-            logger.write(e.getMessage());
-        }
-        return xmlForPid;
-    }
+		if (isAValidCursor(nextCursor)) {
+			getSpiderReadResultForConverter(converter, filter, nextCursor, spiderReadResult);
+		}
+		return spiderReadResult;
+	}
 
-    private String tryGetUrlForPid(FedoraReaderConverter converter, String pid) {
-        String pidUrl = null;
-        try {
-            pidUrl = converter.getQueryForObjectId(pid);
-        } catch (FedoraReaderConverterException e) {
-            logger.write(e.getMessage());
-        }
-        return pidUrl;
-    }
+	private FedoraReaderPidListWithOptionalCursor getFedoraReaderPidListWithOptionalCursorFrom(
+			FedoraReadPositionConverter converter, DataGroup filter, FedoraReaderCursor cursor)
+			throws XMLXPathParserException {
+		var fedoraReaderXmlHelper = xmlxPathParserFactory.factorHelper();
+		String requestQuery;
+		if (cursor == null) {
+			requestQuery = converter.getQueryForList(filter);
+		} else {
+			requestQuery = converter.getQueryForList(filter, cursor);
+		}
+		XMLXPathParser parserPidList = tryGetXmlXPathParserFromFedora(requestQuery);
+		return fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(parserPidList);
+	}
 
-    private SpiderReadResult getSpiderReadResultForConverter(FedoraReaderCursor cursor, SpiderReadResult spiderReadResult, DataGroup filter, FedoraReaderConverter converter, Function<Long, Function<String, DataGroup>>  conditionalConverter) throws XMLXPathParserException, FedoraReaderConverterException {
+	private DataGroup getDataGroupForFedoraPid(FedoraReaderConverter converter, String pidUrl) {
+		XMLXPathParser xmlForPid = tryGetXmlXPathParserFromFedora(pidUrl);
+		converter.loadXml(xmlForPid);
+		return tryConvertXML(converter);
+	}
 
-        var pidListAndCursor = getFedoraReaderPidListWithOptionalCursorFromBlah(filter, converter, cursor);
+	private DataGroup tryConvertXML(FedoraReaderConverter converter) {
+		try {
+			return converter.convert();
+		} catch (FedoraReaderConverterException e) {
+			logger.write(e.getMessage());
+		}
+		return null;
+	}
 
-        var pidList = pidListAndCursor.getPidList();
-        int fedoraReadLength = pidList.size();
+	private SpiderReadResult createEmptySpiderReadResult() {
+		SpiderReadResult result = new SpiderReadResult();
+		result.listOfDataGroups = new ArrayList<>();
+		result.totalNumberOfMatches = 0;
+		return result;
+	}
 
-
-        var pos = spiderReadResult.totalNumberOfMatches;
-        List<DataGroup> result = new ArrayList<>();
-        for (var elem : pidList) {
-            var converterForElem = conditionalConverter.apply(pos);
-            if (converterForElem != null) {
-                result.add(converterForElem.apply(elem));
-            }
-            pos++;
-        }
-
-// TODO: handle failing stuff with : result.stream().filter(Objects::nonNull).collect(Collectors.toList())
-        spiderReadResult.listOfDataGroups.addAll(result);
-        spiderReadResult.totalNumberOfMatches += fedoraReadLength;
-
-        if (isAValidCursor(pidListAndCursor.getCursor())) {
-            getSpiderReadResultForConverter(pidListAndCursor.getCursor(), spiderReadResult, filter, converter, conditionalConverter);
-        }
-        return spiderReadResult;
-    }
-
-    private FedoraReaderPidListWithOptionalCursor getFedoraReaderPidListWithOptionalCursorFromBlah(DataGroup filter, FedoraReaderConverter converter, FedoraReaderCursor cursor) throws XMLXPathParserException {
-        var fedoraReaderXmlHelper = xmlxPathParserFactory.factorHelper();
-        String requestQuery;
-        if(cursor == null) {
-            requestQuery = converter.getQueryForList(filter);
-        } else {
-            requestQuery = converter.getQueryForList(filter, cursor);
-        }
-
-        XMLXPathParser parserPidList = tryGetXmlXPathParserFromFedora(requestQuery);
-        return fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(parserPidList);
-    }
-
-    private SpiderReadResult createEmptySpiderReadResult() {
-        SpiderReadResult result = new SpiderReadResult();
-        result.listOfDataGroups = new ArrayList<>();
-        result.totalNumberOfMatches = 0;
-        return result;
-    }
-
-    private boolean isAValidCursor(FedoraReaderCursor cursor) {
-        return cursor != null && cursor.getToken() != null;
-    }
+	private boolean isAValidCursor(FedoraReaderCursor cursor) {
+		return cursor != null && cursor.getToken() != null;
+	}
 
 }

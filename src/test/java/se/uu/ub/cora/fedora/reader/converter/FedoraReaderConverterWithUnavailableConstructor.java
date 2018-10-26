@@ -12,21 +12,6 @@ public class FedoraReaderConverterWithUnavailableConstructor extends FedoraReade
     }
 
     @Override
-    public String getQueryForObjectId(String id) {
-        return null;
-    }
-
-    @Override
-    public String getQueryForList(DataGroup filter) {
-        return null;
-    }
-
-    @Override
-    public String getQueryForList(DataGroup filter, FedoraReaderCursor cursor) {
-        return null;
-    }
-
-    @Override
     public boolean loadXml(XMLXPathParser xmlxPathParser) {
         return false;
     }

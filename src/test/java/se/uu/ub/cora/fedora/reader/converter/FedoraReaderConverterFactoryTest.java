@@ -2,8 +2,6 @@ package se.uu.ub.cora.fedora.reader.converter;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import se.uu.ub.cora.bookkeeper.data.DataGroup;
-import se.uu.ub.cora.fedora.data.FedoraReaderCursor;
 
 import static org.testng.Assert.*;
 
@@ -18,7 +16,7 @@ public class FedoraReaderConverterFactoryTest {
     public void init() {
         fedoraReaderConverterFactory = new FedoraReaderConverterFactoryImp();
         fedoraReaderConverterFactory.setBaseUrl(SOME_BASE_URL);
-        fedoraReaderConverterFactory.setDefaultTypeRestQueryInterface(FedoraTypeRestQueryInterfaceDefault.class);
+        fedoraReaderConverterFactory.setDefaultTypeRestQueryInterface(FedoraTypeRestQueryDefault.class);
     }
 
     @Test
@@ -30,9 +28,9 @@ public class FedoraReaderConverterFactoryTest {
 
     @Test
     public void testSetAndGetDefaultTypeRestQueryInterface() {
-        fedoraReaderConverterFactory.setDefaultTypeRestQueryInterface(FedoraTypeRestQueryInterfaceDefault.class);
+        fedoraReaderConverterFactory.setDefaultTypeRestQueryInterface(FedoraTypeRestQueryDefault.class);
         var actual = fedoraReaderConverterFactory.getDefaultTypeRestQueryInterface();
-        assertEquals(actual, FedoraTypeRestQueryInterfaceDefault.class);
+        assertEquals(actual, FedoraTypeRestQueryDefault.class);
     }
 
 
@@ -72,38 +70,33 @@ public class FedoraReaderConverterFactoryTest {
         fedoraReaderConverterFactory.registerConverter(fedoraReaderConverterClass);
     }
 
-    @Test
-    public void testRegisterSomeReader() throws FedoraReaderConverterFactoryException {
-        fedoraReaderConverterFactory.registerConverter(FedoraReaderConverterSpy.class);
-        assertTrue(fedoraReaderConverterFactory.factorConverter(FedoraReaderConverterSpy.defaultType) instanceof FedoraReaderConverterSpy);
-    }
 
     @Test(expectedExceptions = FedoraReaderConverterFactoryException.class, expectedExceptionsMessageRegExp = "missingType does not have a registered converter")
     public void testFactorUnregistered() throws FedoraReaderConverterFactoryException {
         fedoraReaderConverterFactory.factorConverter("missingType");
     }
 
-    @Test(expectedExceptions = FedoraReaderConverterFactoryException.class, expectedExceptionsMessageRegExp = "se.uu.ub.cora.fedora.reader.converter.FedoraTypeRestQueryInterfaceWithUnavailableConstructor has no public single string constructor")
+    @Test(expectedExceptions = FedoraReaderConverterFactoryException.class, expectedExceptionsMessageRegExp = "se.uu.ub.cora.fedora.reader.converter.FedoraTypeRestQueryWithUnavailableConstructor has no public single string constructor")
     public void testRegisterTypeRestQueryInterfaceWithNoPublicSingleStringConstructor() throws FedoraReaderConverterFactoryException {
-        var fedoraReaderConverterClass = FedoraTypeRestQueryInterfaceWithUnavailableConstructor.class;
+        var fedoraReaderConverterClass = FedoraTypeRestQueryWithUnavailableConstructor.class;
         fedoraReaderConverterFactory.registerTypeRestQueryInterface(fedoraReaderConverterClass);
     }
 
-    @Test(expectedExceptions = FedoraReaderConverterFactoryException.class, expectedExceptionsMessageRegExp = "Constructor failed for se.uu.ub.cora.fedora.reader.converter.FedoraTypeRestQueryInterfaceWithBrokenConstructor")
+    @Test(expectedExceptions = FedoraReaderConverterFactoryException.class, expectedExceptionsMessageRegExp = "Constructor failed for se.uu.ub.cora.fedora.reader.converter.FedoraTypeRestQueryWithBrokenConstructor")
     public void testRegisterTypeRestQueryInterfaceWithBrokenConstructor() throws FedoraReaderConverterFactoryException {
-        var fedoraReaderConverterClass = FedoraTypeRestQueryInterfaceWithBrokenConstructor.class;
+        var fedoraReaderConverterClass = FedoraTypeRestQueryWithBrokenConstructor.class;
         fedoraReaderConverterFactory.registerTypeRestQueryInterface(fedoraReaderConverterClass);
     }
 
-    @Test(expectedExceptions = FedoraReaderConverterFactoryException.class, expectedExceptionsMessageRegExp = "se.uu.ub.cora.fedora.reader.converter.FedoraTypeRestQueryInterfaceNullType has an empty or null type")
+    @Test(expectedExceptions = FedoraReaderConverterFactoryException.class, expectedExceptionsMessageRegExp = "se.uu.ub.cora.fedora.reader.converter.FedoraTypeRestQueryNullType has an empty or null type")
     public void testRegisterTypeRestQueryInterfaceWithNullType() throws FedoraReaderConverterFactoryException {
-        var fedoraTypeRestQueryInterfaceNullType = FedoraTypeRestQueryInterfaceNullType.class;
+        var fedoraTypeRestQueryInterfaceNullType = FedoraTypeRestQueryNullType.class;
         fedoraReaderConverterFactory.registerTypeRestQueryInterface(fedoraTypeRestQueryInterfaceNullType);
     }
 
-    @Test(expectedExceptions = FedoraReaderConverterFactoryException.class, expectedExceptionsMessageRegExp = "se.uu.ub.cora.fedora.reader.converter.FedoraTypeRestQueryInterfaceWithEmptyType has an empty or null type")
+    @Test(expectedExceptions = FedoraReaderConverterFactoryException.class, expectedExceptionsMessageRegExp = "se.uu.ub.cora.fedora.reader.converter.FedoraTypeRestQueryWithEmptyType has an empty or null type")
     public void testRegisterTypeRestQueryInterfaceWithEmptyType() throws FedoraReaderConverterFactoryException {
-        var fedoraReaderConverterClass = FedoraTypeRestQueryInterfaceWithEmptyType.class;
+        var fedoraReaderConverterClass = FedoraTypeRestQueryWithEmptyType.class;
         fedoraReaderConverterFactory.registerTypeRestQueryInterface(fedoraReaderConverterClass);
     }
 
@@ -114,18 +107,45 @@ public class FedoraReaderConverterFactoryTest {
     }
 
     @Test
-    public void testFactorUnregisteredTypeRestQueryInterface() throws FedoraReaderConverterFactoryException, FedoraReaderConverterException {
-        var typeRestQueryInterface = fedoraReaderConverterFactory.factorTypeRestQueryInterface(SOME_MISSING_TYPE);
-        var defaultTypeRestQueryInterface = new FedoraTypeRestQueryInterfaceDefault(SOME_BASE_URL, SOME_MISSING_TYPE);
-        assertEquals(typeRestQueryInterface.getQueryForObjectId(SOME_ID), defaultTypeRestQueryInterface.getQueryForObjectId(SOME_ID));
-    }
-
-    @Test
     public void testRegisterAndFactorTypeRestQueryInterface() throws FedoraReaderConverterFactoryException {
-     //   var someTypeRestQueryInterface = new FedoraTypeRestQueryInterfaceSpy(SOME_BASE_URL, SOME_TYPE);
-        fedoraReaderConverterFactory.registerTypeRestQueryInterface(FedoraTypeRestQueryInterfaceSpy.class);
+        //   var someTypeRestQueryInterface = new FedoraTypeRestQuerySpy(SOME_BASE_URL, SOME_TYPE);
+        fedoraReaderConverterFactory.registerTypeRestQueryInterface(FedoraTypeRestQuerySpy.class);
         var actual = fedoraReaderConverterFactory.factorTypeRestQueryInterface(SOME_TYPE);
         assertNotNull(actual);
     }
+
+    @Test
+    public void testFactorFedoraReadPositionConverter() throws FedoraReaderConverterFactoryException {
+        fedoraReaderConverterFactory.registerConverter(FedoraReaderConverterSpy.class);
+        var allConverter = fedoraReaderConverterFactory.factor(FedoraReaderConverterSpy.defaultType);
+        assertTrue(allConverter instanceof FedoraReadPositionConverterImp);
+
+        assertEquals(allConverter.getConverter().type(), FedoraReaderConverterSpy.defaultType);
+        var defaultTypeRestQueryInterface = new FedoraTypeRestQueryDefault(SOME_BASE_URL, FedoraReaderConverterSpy.defaultType);
+        assertEquals(allConverter.getQueryForObjectId(SOME_ID), defaultTypeRestQueryInterface.getQueryForObjectId(SOME_ID));
+    }
+
+    @Test
+    public void testFactorFedoraReadPositionFromStartConverter() throws FedoraReaderConverterFactoryException {
+        fedoraReaderConverterFactory.registerConverter(FedoraReaderConverterSpy.class);
+        var allConverter = fedoraReaderConverterFactory.factor(FedoraReaderConverterSpy.defaultType, 0);
+        assertTrue(allConverter instanceof FedoraReadPositionFromStartConverter);
+
+        assertEquals(allConverter.getConverter().type(), FedoraReaderConverterSpy.defaultType);
+        var defaultTypeRestQueryInterface = new FedoraTypeRestQueryDefault(SOME_BASE_URL, FedoraReaderConverterSpy.defaultType);
+        assertEquals(allConverter.getQueryForObjectId(SOME_ID), defaultTypeRestQueryInterface.getQueryForObjectId(SOME_ID));
+    }
+
+    @Test
+    public void testFactorFedoraReadPositionFromStartWithStopConverter() throws FedoraReaderConverterFactoryException {
+        fedoraReaderConverterFactory.registerConverter(FedoraReaderConverterSpy.class);
+        var allConverter = fedoraReaderConverterFactory.factor(FedoraReaderConverterSpy.defaultType, 0, 0);
+        assertTrue(allConverter instanceof FedoraReadPositionFromStartWithStopConverter);
+
+        assertEquals(allConverter.getConverter().type(), FedoraReaderConverterSpy.defaultType);
+        var defaultTypeRestQueryInterface = new FedoraTypeRestQueryDefault(SOME_BASE_URL, FedoraReaderConverterSpy.defaultType);
+        assertEquals(allConverter.getQueryForObjectId(SOME_ID), defaultTypeRestQueryInterface.getQueryForObjectId(SOME_ID));
+    }
+
 
 }

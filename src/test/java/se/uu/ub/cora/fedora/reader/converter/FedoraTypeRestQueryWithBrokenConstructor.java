@@ -3,9 +3,10 @@ package se.uu.ub.cora.fedora.reader.converter;
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
 import se.uu.ub.cora.fedora.data.FedoraReaderCursor;
 
-public class FedoraTypeRestQueryInterfaceNullType extends FedoraTypeRestQueryInterface {
-    public FedoraTypeRestQueryInterfaceNullType(String baseUrl, String type) {
+public class FedoraTypeRestQueryWithBrokenConstructor extends FedoraTypeRestQuery {
+    public FedoraTypeRestQueryWithBrokenConstructor(String baseUrl, String type) {
         super(baseUrl, type);
+        throw new RuntimeException("FedoraTypeRestQueryWithBrokenConstructor exploded");
     }
 
     @Override

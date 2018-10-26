@@ -1,7 +1,6 @@
 package se.uu.ub.cora.fedora.reader.converter;
 
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
-import se.uu.ub.cora.fedora.data.FedoraReaderCursor;
 import se.uu.ub.cora.fedora.data.XMLXPathParser;
 import se.uu.ub.cora.fedora.data.XMLXPathParserSpy;
 
@@ -15,90 +14,28 @@ public class FedoraReaderConverterSpy extends FedoraReaderConverter {
 
     public boolean uselessXml;
 
-    public Map<String,Integer> factorTypeCount;
-
-    private String lastFactorType;
-
     public XMLXPathParser xmlxPathParser;
     public Map<String, DataGroup> conversionResultForPid;
-    public String badId;
-    public List<String> objectUrlRequests;
-    public List<String> listUrlRequests;
+
+    public List<String> failForPidInList;
     public List<String> xmlPidList;
     public List<String> loadedXml;
     public int convertCalls = 0;
     private String requestedPid;
     private String possiblyPidForConverter;
 
-    public Map<String,Integer> pidQueryCount;
-
-    public Map<String,String> queryForId;
-    public int queryForIdCalls = 0;
-    public String queryForType;
-    public int queryForTypeCalls = 0;
-
-
-    public void factorFor(String type) {
-        int count = 0;
-        if(factorTypeCount.containsKey(type)) {
-            count = factorTypeCount.get(type);
-        }
-        factorTypeCount.put(type, count + 1);
-        lastFactorType = type;
-    }
-
-    public void addQueryForId(String id, String query) {
-        queryForId.put(id, query);
-    }
+    protected String factoredType;
 
     public FedoraReaderConverterSpy() {
         super();
 
-        queryForId = new HashMap<>();
-        factorTypeCount = new HashMap<>();
-        objectUrlRequests = new ArrayList<>();
-        listUrlRequests = new ArrayList<>();
+        uselessXml = false;
         loadedXml = new ArrayList<>();
         xmlPidList = new ArrayList<>();
-        requestedPid = null;
-        uselessXml = false;
         conversionResultForPid = new HashMap<>();
-        pidQueryCount = new HashMap<>();
+        failForPidInList = new ArrayList<>();
+        requestedPid = null;
 
-    }
-
-    public int getTypeCountFor(String type) {
-        return factorTypeCount.get(type);
-    }
-
-
-    public int getPidCountFor(String pid) {
-        return pidQueryCount.get(pid);
-    }
-
-    @Override
-    public String getQueryForObjectId(String id) throws FedoraReaderConverterException {
-        queryForIdCalls++;
-        var count = 0;
-        if(pidQueryCount.containsKey(id)) {
-            count = pidQueryCount.get(id);
-        }
-        pidQueryCount.put(id, count + 1);
-        if(badId != null && badId.equals(id)) {
-            throw new FedoraReaderConverterException("Cannot create URL for " + id);
-        }
-        return queryForId.get(id);
-    }
-
-    @Override
-    public String getQueryForList(DataGroup filter) {
-        queryForTypeCalls++;
-        return queryForType;
-    }
-
-    @Override
-    public String getQueryForList(DataGroup filter, FedoraReaderCursor cursor) {
-        return cursor.getToken();
     }
 
     @Override
@@ -120,8 +57,8 @@ public class FedoraReaderConverterSpy extends FedoraReaderConverter {
     @Override
     public DataGroup convert() throws FedoraReaderConverterException {
         convertCalls += 1;
-        if(uselessXml) {
-            throw new FedoraReaderConverterException("XML cannot be converted to " + lastFactorType);
+        if(uselessXml || failForPidInList.contains(possiblyPidForConverter)) {
+            throw new FedoraReaderConverterException("XML cannot be converted to " + type());
         }
         if(conversionResultForPid.containsKey(possiblyPidForConverter)) {
             return conversionResultForPid.get(possiblyPidForConverter);
@@ -131,9 +68,9 @@ public class FedoraReaderConverterSpy extends FedoraReaderConverter {
 
     @Override
     public String type() {
-        if(lastFactorType == null) {
+        if(factoredType == null) {
             return defaultType;
         }
-        return lastFactorType;
+        return factoredType;
     }
 }

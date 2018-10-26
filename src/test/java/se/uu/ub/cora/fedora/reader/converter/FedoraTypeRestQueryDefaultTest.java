@@ -6,7 +6,7 @@ import se.uu.ub.cora.fedora.data.FedoraReaderCursor;
 
 import static org.testng.Assert.assertEquals;
 
-public class FedoraTypeRestQueryInterfaceDefaultTest {
+public class FedoraTypeRestQueryDefaultTest {
     private final static String SOME_BASE_URL = "someBaseUrl";
     private final static String SOME_TYPE = "someType";
     private final static String SOME_ID = "someId";
@@ -14,69 +14,69 @@ public class FedoraTypeRestQueryInterfaceDefaultTest {
 
     @Test
     void testSetAndGetMaxResult() {
-        var trqid = new FedoraTypeRestQueryInterfaceDefault(SOME_BASE_URL, SOME_TYPE);
+        var fedoraTypeRequestQuery = new FedoraTypeRestQueryDefault(SOME_BASE_URL, SOME_TYPE);
         var maxResult = 7;
-        trqid.setMaxResults(maxResult);
-        assertEquals(trqid.getMaxResults(), maxResult);
+        fedoraTypeRequestQuery.setMaxResults(maxResult);
+        assertEquals(fedoraTypeRequestQuery.getMaxResults(), maxResult);
     }
 
     @Test
     void testGetQueryForObjectId() {
-        var trqid = new FedoraTypeRestQueryInterfaceDefault(SOME_BASE_URL, SOME_TYPE);
-        assertEquals(trqid.type(), "magicDefaultType");
-        assertEquals(trqid.getQueryForObjectId(SOME_ID),
+        var fedoraTypeRequestQuery = new FedoraTypeRestQueryDefault(SOME_BASE_URL, SOME_TYPE);
+        assertEquals(fedoraTypeRequestQuery.type(), "magicDefaultType");
+        assertEquals(fedoraTypeRequestQuery.getQueryForObjectId(SOME_ID),
                 SOME_BASE_URL + "/objects/" + SOME_ID + "/datastreams/METADATA/content");
     }
 
     @Test
     void testGetQueryForList() {
-        var trqid = new FedoraTypeRestQueryInterfaceDefault(SOME_BASE_URL, SOME_TYPE);
+        var fedoraTypeRequestQuery = new FedoraTypeRestQueryDefault(SOME_BASE_URL, SOME_TYPE);
         var expectedUrl = SOME_BASE_URL +
                 "/objects?pid=true&maxResults=100&resultFormat=xml&query=pid%7E" +
                 SOME_TYPE + ":*";
-        assertEquals(trqid.type(), "magicDefaultType");
-        assertEquals(trqid.getQueryForList(EMPTY_FILTER), expectedUrl);
+        assertEquals(fedoraTypeRequestQuery.type(), "magicDefaultType");
+        assertEquals(fedoraTypeRequestQuery.getQueryForList(EMPTY_FILTER), expectedUrl);
     }
 
     @Test
     void testGetQueryForListWithMaxResult() {
-        var trqid = new FedoraTypeRestQueryInterfaceDefault(SOME_BASE_URL, SOME_TYPE);
+        var fedoraTypeRequestQuery = new FedoraTypeRestQueryDefault(SOME_BASE_URL, SOME_TYPE);
         var maxResult = 7;
-        trqid.setMaxResults(maxResult);
+        fedoraTypeRequestQuery.setMaxResults(maxResult);
         var expectedUrl = SOME_BASE_URL +
                 "/objects?pid=true&maxResults=7&resultFormat=xml&query=pid%7E" +
                 SOME_TYPE + ":*";
-        assertEquals(trqid.type(), "magicDefaultType");
-        assertEquals(trqid.getQueryForList(EMPTY_FILTER), expectedUrl);
+        assertEquals(fedoraTypeRequestQuery.type(), "magicDefaultType");
+        assertEquals(fedoraTypeRequestQuery.getQueryForList(EMPTY_FILTER), expectedUrl);
     }
 
     @Test
     void testGetQueryForListWithCursor() {
-        var trqid = new FedoraTypeRestQueryInterfaceDefault(SOME_BASE_URL, SOME_TYPE);
+        var fedoraTypeRequestQuery = new FedoraTypeRestQueryDefault(SOME_BASE_URL, SOME_TYPE);
         var cursor = new FedoraReaderCursor("someToken");
         var expectedUrl = SOME_BASE_URL +
                 "/objects?sessionToken=someToken&pid=true&maxResults=100&resultFormat=xml&query=pid%7E" +
                 SOME_TYPE + ":*";
-        assertEquals(trqid.type(), "magicDefaultType");
-        assertEquals(trqid.getQueryForList(EMPTY_FILTER, cursor), expectedUrl);
+        assertEquals(fedoraTypeRequestQuery.type(), "magicDefaultType");
+        assertEquals(fedoraTypeRequestQuery.getQueryForList(EMPTY_FILTER, cursor), expectedUrl);
     }
 
     @Test
     void testGetQueryForListWithCursorWithMaxResult() {
-        var trqid = new FedoraTypeRestQueryInterfaceDefault(SOME_BASE_URL, SOME_TYPE);
+        var fedoraTypeRequestQuery = new FedoraTypeRestQueryDefault(SOME_BASE_URL, SOME_TYPE);
         var cursor = new FedoraReaderCursor("someToken");
         var maxResult = 7;
-        trqid.setMaxResults(maxResult);
+        fedoraTypeRequestQuery.setMaxResults(maxResult);
         var expectedUrl = SOME_BASE_URL +
                 "/objects?sessionToken=someToken&pid=true&maxResults=7&resultFormat=xml&query=pid%7E" +
                 SOME_TYPE + ":*";
-        assertEquals(trqid.type(), "magicDefaultType");
-        assertEquals(trqid.getQueryForList(EMPTY_FILTER, cursor), expectedUrl);
+        assertEquals(fedoraTypeRequestQuery.type(), "magicDefaultType");
+        assertEquals(fedoraTypeRequestQuery.getQueryForList(EMPTY_FILTER, cursor), expectedUrl);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     void testGetQueryForListWithNullCursor() {
-        var trqid = new FedoraTypeRestQueryInterfaceDefault(SOME_BASE_URL, SOME_TYPE);
-        trqid.getQueryForList(EMPTY_FILTER, null);
+        var fedoraTypeRequestQuery = new FedoraTypeRestQueryDefault(SOME_BASE_URL, SOME_TYPE);
+        fedoraTypeRequestQuery.getQueryForList(EMPTY_FILTER, null);
     }
 }

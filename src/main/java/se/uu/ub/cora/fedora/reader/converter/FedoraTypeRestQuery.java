@@ -3,9 +3,9 @@ package se.uu.ub.cora.fedora.reader.converter;
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
 import se.uu.ub.cora.fedora.data.FedoraReaderCursor;
 
-public abstract class FedoraTypeRestQueryInterface {
+public abstract class FedoraTypeRestQuery {
 
-    public FedoraTypeRestQueryInterface(String baseUrl, String type) {
+    public FedoraTypeRestQuery(String baseUrl, String type) {
         this.baseUrl = baseUrl;
         this.type = type;
     }

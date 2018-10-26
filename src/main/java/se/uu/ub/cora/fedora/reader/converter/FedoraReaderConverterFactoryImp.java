@@ -6,8 +6,8 @@ import java.util.Map;
 
 public class FedoraReaderConverterFactoryImp implements FedoraReaderConverterFactory {
     private Map<String, Class<? extends FedoraReaderConverter>> loadableConverter = new HashMap<>();
-    private Map<String, Class<? extends FedoraTypeRestQueryInterface>> loadableTypeRestQueryInterface = new HashMap<>();
-    private Class<? extends FedoraTypeRestQueryInterface> defaultTypeRestQueryInterfaceClass = FedoraTypeRestQueryInterfaceDefault.class;
+    private Map<String, Class<? extends FedoraTypeRestQuery>> loadableTypeRestQueryInterface = new HashMap<>();
+    private Class<? extends FedoraTypeRestQuery> defaultTypeRestQueryInterfaceClass = FedoraTypeRestQueryDefault.class;
     private String baseUrl;
 
     @Override
@@ -21,18 +21,33 @@ public class FedoraReaderConverterFactoryImp implements FedoraReaderConverterFac
     }
 
     @Override
+    public FedoraReadPositionConverter factor(String type) throws FedoraReaderConverterFactoryException {
+        return new FedoraReadPositionConverterImp(factorConverter(type), factorTypeRestQueryInterface(type));
+    }
+
+    @Override
+    public FedoraReadPositionConverter factor(String type, long start) throws FedoraReaderConverterFactoryException {
+        return new FedoraReadPositionFromStartConverter(factorConverter(type), factorTypeRestQueryInterface(type), start);
+    }
+
+    @Override
+    public FedoraReadPositionConverter factor(String type, long start, long stop) throws FedoraReaderConverterFactoryException {
+        return new FedoraReadPositionFromStartWithStopConverter(factorConverter(type), factorTypeRestQueryInterface(type), start, stop);
+    }
+
+    @Override
     public void registerConverter(Class<? extends FedoraReaderConverter> fedoraReaderConverterClass) throws FedoraReaderConverterFactoryException {
         FedoraReaderConverter fedoraReaderConverter = tryInstantiatingConverter(fedoraReaderConverterClass);
         loadableConverter.put(fedoraReaderConverter.type(), fedoraReaderConverterClass);
     }
 
     @Override
-    public void registerTypeRestQueryInterface(Class<? extends FedoraTypeRestQueryInterface> fedoraTypeRestQueryInterfaceClass) throws FedoraReaderConverterFactoryException {
-        FedoraTypeRestQueryInterface fedoraTypeRestQueryInterface = tryInstantiatingTypeRestQueryInterface(fedoraTypeRestQueryInterfaceClass, "");
-        loadableTypeRestQueryInterface.put(fedoraTypeRestQueryInterface.type(), fedoraTypeRestQueryInterfaceClass);
+    public void registerTypeRestQueryInterface(Class<? extends FedoraTypeRestQuery> fedoraTypeRestQueryInterfaceClass) throws FedoraReaderConverterFactoryException {
+        FedoraTypeRestQuery fedoraTypeRestQuery = tryInstantiatingTypeRestQueryInterface(fedoraTypeRestQueryInterfaceClass, "");
+        loadableTypeRestQueryInterface.put(fedoraTypeRestQuery.type(), fedoraTypeRestQueryInterfaceClass);
     }
 
-    private FedoraTypeRestQueryInterface tryInstantiatingTypeRestQueryInterface(Class<? extends FedoraTypeRestQueryInterface> fedoraTypeRestQueryInterfaceClass, String type) throws FedoraReaderConverterFactoryException {
+    private FedoraTypeRestQuery tryInstantiatingTypeRestQueryInterface(Class<? extends FedoraTypeRestQuery> fedoraTypeRestQueryInterfaceClass, String type) throws FedoraReaderConverterFactoryException {
         try {
             return tryGetValidFedoraTypeRestQueryInterface(fedoraTypeRestQueryInterfaceClass, type);
         } catch (NoSuchMethodException e) {
@@ -42,19 +57,19 @@ public class FedoraReaderConverterFactoryImp implements FedoraReaderConverterFac
         }
     }
 
-    private FedoraTypeRestQueryInterface tryGetValidFedoraTypeRestQueryInterface(Class<? extends FedoraTypeRestQueryInterface> fedoraTypeRestQueryInterfaceClass, String type) throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException, FedoraReaderConverterFactoryException {
-        FedoraTypeRestQueryInterface fedoraTypeRestQueryInterface = getFedoraTypeRestQueryInterfaceFromClass(fedoraTypeRestQueryInterfaceClass, type);
-        validateTypeRestQueryInterfaceType(fedoraTypeRestQueryInterface);
-        return fedoraTypeRestQueryInterface;
+    private FedoraTypeRestQuery tryGetValidFedoraTypeRestQueryInterface(Class<? extends FedoraTypeRestQuery> fedoraTypeRestQueryInterfaceClass, String type) throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException, FedoraReaderConverterFactoryException {
+        FedoraTypeRestQuery fedoraTypeRestQuery = getFedoraTypeRestQueryInterfaceFromClass(fedoraTypeRestQueryInterfaceClass, type);
+        validateTypeRestQueryInterfaceType(fedoraTypeRestQuery);
+        return fedoraTypeRestQuery;
     }
 
-    private void validateTypeRestQueryInterfaceType(FedoraTypeRestQueryInterface fedoraReaderConverter) throws FedoraReaderConverterFactoryException {
+    private void validateTypeRestQueryInterfaceType(FedoraTypeRestQuery fedoraReaderConverter) throws FedoraReaderConverterFactoryException {
         if(stringIsNotNullOrBlank(fedoraReaderConverter.type())) {
             throw new FedoraReaderConverterFactoryException(fedoraReaderConverter.getClass().getName() + " has an empty or null type");
         }
     }
 
-    private FedoraTypeRestQueryInterface getFedoraTypeRestQueryInterfaceFromClass(Class<? extends FedoraTypeRestQueryInterface> fedoraTypeRestQueryInterfaceClass, String type) throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    private FedoraTypeRestQuery getFedoraTypeRestQueryInterfaceFromClass(Class<? extends FedoraTypeRestQuery> fedoraTypeRestQueryInterfaceClass, String type) throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
         var constructor = fedoraTypeRestQueryInterfaceClass.getConstructor(String.class, String.class);
         return constructor.newInstance(baseUrl, type);
     }
@@ -97,7 +112,7 @@ public class FedoraReaderConverterFactoryImp implements FedoraReaderConverterFac
     }
 
     @Override
-    public FedoraTypeRestQueryInterface factorTypeRestQueryInterface(String type) throws FedoraReaderConverterFactoryException {
+    public FedoraTypeRestQuery factorTypeRestQueryInterface(String type) throws FedoraReaderConverterFactoryException {
         if(stringIsNotNullOrBlank(baseUrl)) {
             throw new FedoraReaderConverterFactoryException("Base URL must be set");
         }
@@ -107,12 +122,12 @@ public class FedoraReaderConverterFactoryImp implements FedoraReaderConverterFac
     }
 
     @Override
-    public Class<? extends FedoraTypeRestQueryInterface> getDefaultTypeRestQueryInterface() {
+    public Class<? extends FedoraTypeRestQuery> getDefaultTypeRestQueryInterface() {
         return defaultTypeRestQueryInterfaceClass;
     }
 
     @Override
-    public void setDefaultTypeRestQueryInterface(Class<? extends FedoraTypeRestQueryInterface> defaultTypeRestQueryInterfaceClass) {
+    public void setDefaultTypeRestQueryInterface(Class<? extends FedoraTypeRestQuery> defaultTypeRestQueryInterfaceClass) {
         this.defaultTypeRestQueryInterfaceClass = defaultTypeRestQueryInterfaceClass;
     }
 

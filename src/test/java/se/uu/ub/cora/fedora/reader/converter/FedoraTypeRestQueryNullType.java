@@ -3,14 +3,14 @@ package se.uu.ub.cora.fedora.reader.converter;
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
 import se.uu.ub.cora.fedora.data.FedoraReaderCursor;
 
-public class FedoraTypeRestQueryInterfaceWithEmptyType extends FedoraTypeRestQueryInterface {
-    public FedoraTypeRestQueryInterfaceWithEmptyType(String baseUrl, String type) {
+public class FedoraTypeRestQueryNullType extends FedoraTypeRestQuery {
+    public FedoraTypeRestQueryNullType(String baseUrl, String type) {
         super(baseUrl, type);
     }
 
     @Override
     public String type() {
-        return "";
+        return null;
     }
 
     @Override

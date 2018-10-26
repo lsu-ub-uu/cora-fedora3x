@@ -20,11 +20,6 @@ public class XMLXPathParserSpy implements XMLXPathParser {
         callCount = new HashMap<>();
     }
 
-    public void removeXml(String xml) {
-        validXml.remove(xml);
-        callCount.remove(xml);
-    }
-
     public void addXml(String xml) {
         validXml.put(xml, true);
         callCount.put(xml, 0);
