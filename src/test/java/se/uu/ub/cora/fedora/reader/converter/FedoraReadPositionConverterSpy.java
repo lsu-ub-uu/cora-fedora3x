@@ -80,7 +80,7 @@ public class FedoraReadPositionConverterSpy implements FedoraReadPositionConvert
         } catch (FedoraReaderConverterException e) {
             logger.write(e.getMessage());
         }
-        return "";
+        return null;
     }
 
     @Override

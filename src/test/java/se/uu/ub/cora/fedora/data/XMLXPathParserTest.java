@@ -36,7 +36,7 @@ public class XMLXPathParserTest {
 		xmlxPathParser = xmlxPathParserFactory.factor();
 	}
 
-	@Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "Can not read xml: XML document structures must start and end within the same entity.")
+	@Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "Can not readObject xml: XML document structures must start and end within the same entity.")
 	public void testBadXmlShouldThrow() throws Exception {
 		xmlxPathParser.forXML("<pid>");
 	}

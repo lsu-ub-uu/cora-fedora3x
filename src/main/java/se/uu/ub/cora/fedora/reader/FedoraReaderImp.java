@@ -20,10 +20,12 @@ import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 import se.uu.ub.cora.spider.data.SpiderReadResult;
 
 public class FedoraReaderImp implements FedoraReader {
+	private CoraLogger logger;
+
+
 	private FedoraReaderConverterFactory fedoraReaderConverterFactory;
 	private HttpHandlerFactory httpHandlerFactory;
 	private XMLXPathParserFactory xmlxPathParserFactory;
-	private CoraLogger logger;
 
 	public FedoraReaderImp(FedoraReaderConverterFactory fedoraReaderConverterFactory,
 			HttpHandlerFactory httpHandlerFactory, XMLXPathParserFactory xmlxPathParserFactory,
@@ -40,10 +42,12 @@ public class FedoraReaderImp implements FedoraReader {
 			var converter = fedoraReaderConverterFactory.factor(type);
 			converter.setLogger(logger);
 			var requestUrl = converter.getQueryForObjectId(id);
-			XMLXPathParser parser = tryGetXmlXPathParserFromFedora(requestUrl);
-			var objectConverter = converter.getConverter();
-			objectConverter.loadXml(parser);
-			return objectConverter.convert();
+			if(requestUrl != null) {
+				XMLXPathParser parser = tryGetXmlXPathParserFromFedora(requestUrl);
+				var objectConverter = converter.getConverter();
+				objectConverter.loadXml(parser);
+				return objectConverter.convert();
+			}
 		} catch (FedoraReaderConverterFactoryException | FedoraReaderConverterException e) {
 			log(e.getMessage());
 		}
@@ -120,8 +124,8 @@ public class FedoraReaderImp implements FedoraReader {
 		}
 		int fedoraReadLength = pidList.size();
 
-		var pidListToConvert = converter.filterPidList(spiderReadResult.totalNumberOfMatches,
-				pidList);
+		var pidListToConvert = converter.filterPidList(spiderReadResult.totalNumberOfMatches, pidList);
+
 		List<DataGroup> result = new ArrayList<>();
 		for (var pid : pidListToConvert) {
 			var pidUrl = converter.getQueryForObjectId(pid);

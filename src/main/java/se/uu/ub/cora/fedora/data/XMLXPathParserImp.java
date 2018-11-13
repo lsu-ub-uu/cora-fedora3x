@@ -29,7 +29,7 @@ public final class XMLXPathParserImp implements XMLXPathParser {
 			setupXPath();
 			return this;
 		} catch (Exception e) {
-			throw new XMLXPathParserException("Can not read xml: " + e.getMessage(), e);
+			throw new XMLXPathParserException("Can not readObject xml: " + e.getMessage(), e);
 		}
 	}
 

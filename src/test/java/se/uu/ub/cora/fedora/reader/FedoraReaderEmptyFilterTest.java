@@ -28,6 +28,8 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
     @Test
     public void testReadingAnObjectWithIdAndTypeShouldRequestFedoraConverter() throws FedoraReaderException {
+        fedoraTypeRestQuerySpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY, 1);
+        httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE,1);
         FedoraReader reader = fedoraReaderFactory.factor();
 
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
@@ -38,6 +40,8 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
     @Test
     public void testReadingAnObjectWithIdAndTypeShouldRequestFedoraConverterEvenTwice() throws FedoraReaderException {
+        fedoraTypeRestQuerySpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY, 1);
+        httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE,1);
         FedoraReader reader = fedoraReaderFactory.factor();
 
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
@@ -51,6 +55,7 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
     public void testReadingAnObjectWithIdAndTypeShouldRequestUrlForObjectIdFromFedoraConverter() throws FedoraReaderException {
         FedoraReader reader = fedoraReaderFactory.factor();
         fedoraTypeRestQuerySpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY, 1);
+        httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE,1);
 
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
 
@@ -60,9 +65,12 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
     @Test
     public void testReadingAnObjectWithIdAndTypeShouldProduceExpectedUrlInFirstCallToTheOnlyFactoredHttpHandler() throws FedoraReaderException {
-        FedoraReader reader = fedoraReaderFactory.factor();
 
         fedoraTypeRestQuerySpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY, 1);
+        httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE,1);
+
+        FedoraReader reader = fedoraReaderFactory.factor();
+
 
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
 
@@ -74,7 +82,11 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
     @Test
     public void testReadingAnObjectWithBadId() throws FedoraReaderException {
+        fedoraTypeRestQuerySpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY, 1);
+        httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE,1);
+
         fedoraTypeRestQuerySpy.badId = SOME_OBJECT_ID;
+
         FedoraReader reader = fedoraReaderFactory.factor();
 
         var result =  reader.read(SOME_TYPE, SOME_OBJECT_ID);
@@ -86,8 +98,12 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
     @Test
     public void testReadingAnObjectWithBadIdAndNoLogger() throws FedoraReaderException {
+        fedoraTypeRestQuerySpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY, 1);
+        httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE,1);
+
         fedoraTypeRestQuerySpy.badId = SOME_OBJECT_ID;
         coraLogger = null;
+
         FedoraReader reader = fedoraReaderFactory.factor();
 
         var result =  reader.read(SOME_TYPE, SOME_OBJECT_ID);
@@ -97,6 +113,9 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
     @Test
     public void testLoggerWasPassedOnToFedoraReadPositionConverter() throws FedoraReaderException {
+        fedoraTypeRestQuerySpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY, 1);
+        httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE,1);
+
         FedoraReader reader = fedoraReaderFactory.factor();
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
         assertEquals(fedoraReadPositionConverterSpy.logger, coraLogger);
@@ -105,6 +124,10 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
     @Test
     public void testReadingAnObjectShouldFactorAnXMLPathParserInTheSpy() throws FedoraReaderException {
+
+        fedoraTypeRestQuerySpy.addQueryForId(SOME_OBJECT_ID, SOME_PID_QUERY, 1);
+        httpHandlerSpy.addQueryResponse(SOME_PID_QUERY, SOME_PID_REQUEST_XML_RESPONSE,1);
+
         FedoraReader reader = fedoraReaderFactory.factor();
 
         reader.read(SOME_TYPE, SOME_OBJECT_ID);
@@ -182,6 +205,9 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
     @Test
     public void testReadListShouldFactorAConverterForItsType() throws FedoraReaderException {
+        fedoraTypeRestQuerySpy.queryForType = SOME_TYPE_QUERY;
+        httpHandlerSpy.addQueryResponse(SOME_TYPE_QUERY, SOME_TYPE_REQUEST_XML_RESPONSE, 1);
+
         var reader = fedoraReaderFactory.factor();
 
         reader.readList(SOME_TYPE, EMPTY_FILTER);
@@ -214,6 +240,9 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
     @Test
     public void testReadListShouldFactorAnXMLParser() throws FedoraReaderException {
+        fedoraTypeRestQuerySpy.queryForType = SOME_TYPE_QUERY;
+        httpHandlerSpy.addQueryResponse(SOME_TYPE_QUERY, SOME_TYPE_REQUEST_XML_RESPONSE, 1);
+
         FedoraReader reader = fedoraReaderFactory.factor();
 
         reader.readList(SOME_TYPE, EMPTY_FILTER);
@@ -264,6 +293,9 @@ public class FedoraReaderEmptyFilterTest extends FedoraReaderTestBase {
 
     @Test
     public void testReadListConverterShouldGetXMLToParsePidListFromAndThrowIfPidListIsBad() throws FedoraReaderException {
+        fedoraTypeRestQuerySpy.queryForType = SOME_TYPE_QUERY;
+        httpHandlerSpy.addQueryResponse(SOME_TYPE_QUERY, SOME_TYPE_REQUEST_XML_RESPONSE, 1);
+
         FedoraReader reader = fedoraReaderFactory.factor();
 
         fedoraReaderXmlHelperSpy.failPidExtraction = true;

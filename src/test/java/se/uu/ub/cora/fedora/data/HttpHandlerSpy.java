@@ -9,14 +9,24 @@ import se.uu.ub.cora.httphandler.HttpHandler;
 public class HttpHandlerSpy implements HttpHandler {
     public Map<String, Integer> urlCalls = new HashMap<>();
     public Map<String, String> urlResponse = new HashMap<>();
+    public Map<String, Integer> urlResponseCode = new HashMap<>();
+
     private String responseText;
+    private int responseCode;
 
     public int getUrlCountCallFor(String query) {
         return urlCalls.get(query);
     }
 
+    public void addQueryResponse(String query, String response, int responseCode, int expectedNumberOfCalls) {
+        urlCalls.put(query, expectedNumberOfCalls);
+        urlResponseCode.put(query, responseCode);
+        urlResponse.put(query, response);
+    }
+
     public void addQueryResponse(String query, String response, int expectedNumberOfCalls) {
         urlCalls.put(query, expectedNumberOfCalls);
+        urlResponseCode.put(query, 200);
         urlResponse.put(query, response);
     }
 
@@ -28,6 +38,7 @@ public class HttpHandlerSpy implements HttpHandler {
     {
         updateUrlCounter(url);
         responseText = urlResponse.get(url);
+        responseCode = urlResponseCode.get(url);
     }
 
     private void updateUrlCounter(String url) {
@@ -49,14 +60,12 @@ public class HttpHandlerSpy implements HttpHandler {
 
     @Override
     public int getResponseCode() {
-        // TODO Auto-generated method stub
-        return 0;
+        return responseCode;
     }
 
     @Override
     public void setOutput(String outputString) {
         // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -82,5 +91,4 @@ public class HttpHandlerSpy implements HttpHandler {
         // TODO Auto-generated method stub
         return null;
     }
-
 }

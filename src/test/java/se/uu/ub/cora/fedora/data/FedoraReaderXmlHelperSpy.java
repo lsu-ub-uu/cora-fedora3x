@@ -11,7 +11,7 @@ public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
 
     public boolean failPidExtraction;
 
-    FedoraReaderXmlHelperSpy() {
+    public FedoraReaderXmlHelperSpy() {
         failPidExtraction = false;
         pidListsForXml = new HashMap<>();
         pidListHasCursor = new HashMap<>();
@@ -25,6 +25,21 @@ public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
     @Override
     public FedoraReaderPidListWithOptionalCursor extractPidListAndPossiblyCursor(XMLXPathParser xmlxPathParser) throws XMLXPathParserException {
         return new FedoraReaderPidListWithOptionalCursor(extractPidList(xmlxPathParser), extractCursor(xmlxPathParser));
+    }
+
+    @Override
+    public FedoraReaderPidListWithOptionalCursor extractPidListAndPossiblyCursor(String xml) throws XMLXPathParserException {
+        return new FedoraReaderPidListWithOptionalCursor(pidListsForXml.get(xml), null);
+    }
+
+    @Override
+    public void setXmlXPathParseFactory(XMLXPathParserFactory xmlXPathParserFactory) {
+
+    }
+
+    @Override
+    public XMLXPathParserFactory getXmlXPathParseFactory() {
+        return null;
     }
 
     private List<String> extractPidList(XMLXPathParser xmlxPathParser) throws XMLXPathParserException {

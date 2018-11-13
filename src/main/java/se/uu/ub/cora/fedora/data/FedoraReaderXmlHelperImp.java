@@ -6,10 +6,27 @@ import java.util.List;
 import org.w3c.dom.NodeList;
 
 public class FedoraReaderXmlHelperImp implements FedoraReaderXmlHelper {
+	private XMLXPathParserFactory xmlXPathParserFactory;
 
 	@Override
 	public FedoraReaderPidListWithOptionalCursor extractPidListAndPossiblyCursor(XMLXPathParser xmlxPathParser) throws XMLXPathParserException {
 		return new FedoraReaderPidListWithOptionalCursor(extractPidList(xmlxPathParser), extractCursor(xmlxPathParser));
+	}
+
+	@Override
+	public FedoraReaderPidListWithOptionalCursor extractPidListAndPossiblyCursor(String xml) throws XMLXPathParserException {
+		var xmlXPathParsers = xmlXPathParserFactory.factor().forXML(xml);
+		return new FedoraReaderPidListWithOptionalCursor(extractPidList(xmlXPathParsers), extractCursor(xmlXPathParsers));
+	}
+
+	@Override
+	public void setXmlXPathParseFactory(XMLXPathParserFactory xmlXPathParserFactory) {
+		this.xmlXPathParserFactory = xmlXPathParserFactory;
+	}
+
+	@Override
+	public XMLXPathParserFactory getXmlXPathParseFactory() {
+		return xmlXPathParserFactory;
 	}
 
 	private static List<String> extractPidList(XMLXPathParser xmlxPathParser)
@@ -27,7 +44,7 @@ public class FedoraReaderXmlHelperImp implements FedoraReaderXmlHelper {
 		}
 	}
 
-	private static ArrayList<String> getPidListFromNodeList(NodeList nodeList) {
+	private static List<String> getPidListFromNodeList(NodeList nodeList) {
 		var result = new ArrayList<String>();
 		for (int idx = 0; idx < nodeList.getLength(); idx++) {
 			var node = nodeList.item(idx);
