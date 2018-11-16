@@ -4,9 +4,9 @@ import se.uu.ub.cora.bookkeeper.data.DataGroup;
 import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelper;
 import se.uu.ub.cora.fedora.data.XMLXPathParserException;
 import se.uu.ub.cora.fedora.reader.FedoraReaderException;
-import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class FedoraReaderPureImp implements FedoraReaderPure {
@@ -53,30 +53,35 @@ public class FedoraReaderPureImp implements FedoraReaderPure {
     public List<String> readList(String type, DataGroup filter) throws FedoraReaderException {
         var listUrl =
                 String.format("%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*", baseUrl, maxResults, type);
-        var httpHandler = httpHandlerFactory.factor(listUrl);
+        ArrayList<String> result = getObjectXmlList(type, listUrl);
 
+        return result;
+    }
+
+    public ArrayList<String> getObjectXmlList(String type, String listUrl) throws FedoraReaderException {
+        var httpHandler = httpHandlerFactory.factor(listUrl);
+        var result = new ArrayList<String>();
         throwIfNotOk(type, httpHandler.getResponseCode());
 
         try {
             var somePossibleCursorAndPidList = fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(httpHandler.getResponseText());
-            for(var pid : somePossibleCursorAndPidList.getPidList()) {
-                readObject(pid);
+            for (var pid : somePossibleCursorAndPidList.getPidList()) {
+                result.add(readObject(pid));
+            }
+
+            if (somePossibleCursorAndPidList.getCursor() != null) {
+                listUrl = String.format("%s/objects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*", baseUrl, somePossibleCursorAndPidList.getCursor().getToken(), maxResults, type);
+            } else {
+                listUrl = null;
             }
         } catch (XMLXPathParserException e) {
             e.printStackTrace();
         }
 
-        // httpHandler.response -> pidList: List<String>
-        // httpHandler.response -> cursor: String
+        if (listUrl != null) {
+            result.addAll(getObjectXmlList(type, listUrl));
+        }
 
-        return null;
+        return result;
     }
-
-    /*
-
-    @Override
-    public String getQueryForList(DataGroup filter, FedoraReaderCursor cursor) {
-        return String.format("%s/objects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*", super.baseUrl, cursor.getToken(), super.maxResults, super.type);
-    }
-    * */
 }

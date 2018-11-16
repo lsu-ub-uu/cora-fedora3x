@@ -29,7 +29,30 @@ public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
 
     @Override
     public FedoraReaderPidListWithOptionalCursor extractPidListAndPossiblyCursor(String xml) throws XMLXPathParserException {
-        return new FedoraReaderPidListWithOptionalCursor(pidListsForXml.get(xml), null);
+        FedoraReaderCursor fedoraReaderCursor = getFedoraReaderCursor(xml);
+        ArrayList<String> pidList = getPidList(xml);
+        return new FedoraReaderPidListWithOptionalCursor(pidList, fedoraReaderCursor);
+    }
+
+    public ArrayList<String> getPidList(String xml) {
+        var pidList = new ArrayList<String>();
+        if (pidListsForXml.containsKey(xml)) {
+            pidList.addAll(pidListsForXml.get(xml));
+        } else {
+            System.err.println("FedoraReaderXMLHelperSpy::pidListForXml does not contain key: " + xml);
+
+        }
+        return pidList;
+    }
+
+    public FedoraReaderCursor getFedoraReaderCursor(String xml) {
+        FedoraReaderCursor fedoraReaderCursor = null;
+        if (pidListHasCursor.getOrDefault(xml, false)) {
+            fedoraReaderCursor = new FedoraReaderCursor("someToken");
+        } else {
+            System.err.println("FedoraReaderXMLHelperSpy::pidListHasCursor does not contain key: " + xml);
+        }
+        return fedoraReaderCursor;
     }
 
     @Override
@@ -43,13 +66,13 @@ public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
     }
 
     private List<String> extractPidList(XMLXPathParser xmlxPathParser) throws XMLXPathParserException {
-        if(failPidExtraction) {
+        if (failPidExtraction) {
             throw new XMLXPathParserException("pid extraction failed");
         }
-        if(xmlxPathParser instanceof XMLXPathParserSpy) {
+        if (xmlxPathParser instanceof XMLXPathParserSpy) {
             var xmlPathParserSpy = (XMLXPathParserSpy) xmlxPathParser;
             String lastParsedXml = xmlPathParserSpy.getLastParsedXml();
-            if(pidListsForXml.containsKey(lastParsedXml)) {
+            if (pidListsForXml.containsKey(lastParsedXml)) {
                 return pidListsForXml.get(lastParsedXml);
             }
         }
@@ -57,7 +80,7 @@ public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
     }
 
     private FedoraReaderCursor extractCursor(XMLXPathParser xmlxPathParser) {
-        if(xmlxPathParser instanceof XMLXPathParserSpy) {
+        if (xmlxPathParser instanceof XMLXPathParserSpy) {
             var xmlPathParserSpy = (XMLXPathParserSpy) xmlxPathParser;
             String lastParsedXml = xmlPathParserSpy.getLastParsedXml();
 

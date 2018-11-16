@@ -26,26 +26,31 @@ public class FedoraReaderXmlHelperTest {
         xmlXPathParserFactory = new XMLXPathParserFactoryImp();
         fedoraReaderXmlHelper = new FedoraReaderXmlHelperImp();
         fedoraReaderXmlHelper.setXmlXPathParseFactory(xmlXPathParserFactory);
-        xmlForThreePidAndCursorAtZero = resourceToString("/xml/FedoraReadWithThreePidAndCursorAtZero.xml");
+        xmlForThreePidAndCursorAtZero = resourceToString(
+                "/xml/FedoraReadWithThreePidAndCursorAtZero.xml");
         xmlEmptyWithOnlyRootResultElement = resourceToString("/xml/FedoraReadWithNothing.xml");
         xmlWithEmptyResult = resourceToString("/xml/FedoraReadWithEmptyResult.xml");
-        xmlWithBrokenCursorMissingToken = resourceToString("/xml/FedoraReadWithBrokenCursorMissingToken.xml");
-        xmlWithBrokenCursorEmptyToken = resourceToString("/xml/FedoraReadWithBrokenCursorEmptyToken.xml");
-        xmlWithBrokenCursorMissingCursor = resourceToString("/xml/FedoraReadWithBrokenCursorMissingCursor.xml");
+        xmlWithBrokenCursorMissingToken = resourceToString(
+                "/xml/FedoraReadWithBrokenCursorMissingToken.xml");
+        xmlWithBrokenCursorEmptyToken = resourceToString(
+                "/xml/FedoraReadWithBrokenCursorEmptyToken.xml");
+        xmlWithBrokenCursorMissingCursor = resourceToString(
+                "/xml/FedoraReadWithBrokenCursorMissingCursor.xml");
     }
 
     private String resourceToString(String resourceFile) {
         try (var file = getClass().getResourceAsStream(resourceFile);
              var stream = new InputStreamReader(file);
              var buffered = new BufferedReader(stream)) {
-                return buffered.lines().collect(Collectors.joining());
+            return buffered.lines().collect(Collectors.joining());
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    private XMLXPathParser getXmlXPathParser(String xmlEmptyWithOnlyRootResultElement) throws XMLXPathParserException {
+    private XMLXPathParser getXmlXPathParser(String xmlEmptyWithOnlyRootResultElement)
+            throws XMLXPathParserException {
         XMLXPathParser xmlxPathParser = xmlXPathParserFactory.factor();
         return xmlxPathParser.forXML(xmlEmptyWithOnlyRootResultElement);
     }
@@ -58,21 +63,24 @@ public class FedoraReaderXmlHelperTest {
         expectedPidList.add("alvin-place:679");
         expectedPidList.add("alvin-place:692");
 
-        var actualPidList = fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(getXmlXPathParser(xmlForThreePidAndCursorAtZero));
+        var actualPidList = fedoraReaderXmlHelper
+                .extractPidListAndPossiblyCursor(getXmlXPathParser(xmlForThreePidAndCursorAtZero));
 
         assertEquals(actualPidList.getPidList(), expectedPidList);
     }
 
-
     @Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "There was no resultList in given XML")
-    public void testTryGetPidListFromMissingResult() throws XMLXPathParserException {
+    public void testTryGetPidListFromMissingResult()
+            throws XMLXPathParserException {
 
-        fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(getXmlXPathParser(xmlEmptyWithOnlyRootResultElement));
+        fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(
+                getXmlXPathParser(xmlEmptyWithOnlyRootResultElement));
     }
 
     @Test
     public void testGetPidListFromEmptyResult() throws XMLXPathParserException {
-        var actualPidList = fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(getXmlXPathParser(xmlWithEmptyResult));
+        var actualPidList = fedoraReaderXmlHelper
+                .extractPidListAndPossiblyCursor(getXmlXPathParser(xmlWithEmptyResult));
 
         assertNotNull(actualPidList);
         assertTrue(actualPidList.getPidList().isEmpty());
@@ -83,7 +91,8 @@ public class FedoraReaderXmlHelperTest {
         var expectedCursor = new FedoraReaderCursor("ba0a8ded8f13b71ee52155a3cbdbe34f");
         expectedCursor.setCursor("0");
 
-        var readerPidListWithOptionalCursor = fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(getXmlXPathParser(xmlForThreePidAndCursorAtZero));
+        var readerPidListWithOptionalCursor = fedoraReaderXmlHelper
+                .extractPidListAndPossiblyCursor(getXmlXPathParser(xmlForThreePidAndCursorAtZero));
         var actualCursor = readerPidListWithOptionalCursor.getCursor();
         assertNotNull(actualCursor);
         assertEquals(actualCursor.getToken(), expectedCursor.getToken());
@@ -91,34 +100,40 @@ public class FedoraReaderXmlHelperTest {
     }
 
     @Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "There was no resultList in given XML")
-    public void testGetNullCursorFromXmlWithoutCursor() throws XMLXPathParserException {
-        fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(getXmlXPathParser(xmlEmptyWithOnlyRootResultElement));
+    public void testGetNullCursorFromXmlWithoutCursor()
+            throws XMLXPathParserException {
+        fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(
+                getXmlXPathParser(xmlEmptyWithOnlyRootResultElement));
     }
 
     @Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "token not found in XML")
-    public void testGetNullCursorFromXmlWithoutBrokenCursorMissingToken() throws XMLXPathParserException {
-        fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(getXmlXPathParser(xmlWithBrokenCursorMissingToken));
+    public void testGetNullCursorFromXmlWithoutBrokenCursorMissingToken()
+            throws XMLXPathParserException {
+        fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(
+                getXmlXPathParser(xmlWithBrokenCursorMissingToken));
     }
 
     @Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "token not found in XML")
-    public void testGetNullCursorFromXmlWithoutBrokenCursorEmptyToken() throws XMLXPathParserException {
-        fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(getXmlXPathParser(xmlWithBrokenCursorEmptyToken));
+    public void testGetNullCursorFromXmlWithoutBrokenCursorEmptyToken()
+            throws XMLXPathParserException {
+        fedoraReaderXmlHelper
+                .extractPidListAndPossiblyCursor(getXmlXPathParser(xmlWithBrokenCursorEmptyToken));
     }
 
     @Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "cursor not found in XML")
-    public void testGetNullCursorFromXmlWithoutBrokenCursorMissingCursor() throws XMLXPathParserException {
-        fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(getXmlXPathParser(xmlWithBrokenCursorMissingCursor));
+    public void testGetNullCursorFromXmlWithoutBrokenCursorMissingCursor()
+            throws XMLXPathParserException {
+        fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(
+                getXmlXPathParser(xmlWithBrokenCursorMissingCursor));
     }
 
-
-//TODO: mark
+    //TODO: mark
 
     @Test
     public void testSetXMLXPathParseFactory() {
         fedoraReaderXmlHelper.setXmlXPathParseFactory(xmlXPathParserFactory);
         assertEquals(fedoraReaderXmlHelper.getXmlXPathParseFactory(), xmlXPathParserFactory);
     }
-
 
     @Test
     public void testStringGetPidListFromSomeData() throws XMLXPathParserException {
@@ -128,21 +143,24 @@ public class FedoraReaderXmlHelperTest {
         expectedPidList.add("alvin-place:679");
         expectedPidList.add("alvin-place:692");
 
-        var actualPidList = fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(xmlForThreePidAndCursorAtZero);
+        var actualPidList = fedoraReaderXmlHelper
+                .extractPidListAndPossiblyCursor(xmlForThreePidAndCursorAtZero);
 
         assertEquals(actualPidList.getPidList(), expectedPidList);
     }
 
-
-    @Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "There was no resultList in given XML")
-    public void testStringTryGetPidListFromMissingResult() throws XMLXPathParserException {
+    @Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = ""
+            + "There was no resultList in given XML")
+    public void testStringTryGetPidListFromMissingResult()
+            throws XMLXPathParserException {
 
         fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(xmlEmptyWithOnlyRootResultElement);
     }
 
     @Test
     public void testStringGetPidListFromEmptyResult() throws XMLXPathParserException {
-        var actualPidList = fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(xmlWithEmptyResult);
+        var actualPidList = fedoraReaderXmlHelper
+                .extractPidListAndPossiblyCursor(xmlWithEmptyResult);
 
         assertNotNull(actualPidList);
         assertTrue(actualPidList.getPidList().isEmpty());
@@ -153,7 +171,8 @@ public class FedoraReaderXmlHelperTest {
         var expectedCursor = new FedoraReaderCursor("ba0a8ded8f13b71ee52155a3cbdbe34f");
         expectedCursor.setCursor("0");
 
-        var readerPidListWithOptionalCursor = fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(xmlForThreePidAndCursorAtZero);
+        var readerPidListWithOptionalCursor = fedoraReaderXmlHelper
+                .extractPidListAndPossiblyCursor(xmlForThreePidAndCursorAtZero);
         var actualCursor = readerPidListWithOptionalCursor.getCursor();
         assertNotNull(actualCursor);
         assertEquals(actualCursor.getToken(), expectedCursor.getToken());
@@ -161,24 +180,27 @@ public class FedoraReaderXmlHelperTest {
     }
 
     @Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "There was no resultList in given XML")
-    public void testStringGetNullCursorFromXmlWithoutCursor() throws XMLXPathParserException {
+    public void testStringGetNullCursorFromXmlWithoutCursor()
+            throws XMLXPathParserException {
         fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(xmlEmptyWithOnlyRootResultElement);
     }
 
     @Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "token not found in XML")
-    public void testStringGetNullCursorFromXmlWithoutBrokenCursorMissingToken() throws XMLXPathParserException {
+    public void testStringGetNullCursorFromXmlWithoutBrokenCursorMissingToken()
+            throws XMLXPathParserException {
         fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(xmlWithBrokenCursorMissingToken);
     }
 
     @Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "token not found in XML")
-    public void testStringGetNullCursorFromXmlWithoutBrokenCursorEmptyToken() throws XMLXPathParserException {
+    public void testStringGetNullCursorFromXmlWithoutBrokenCursorEmptyToken()
+            throws XMLXPathParserException {
         fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(xmlWithBrokenCursorEmptyToken);
     }
 
     @Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "cursor not found in XML")
-    public void testStringGetNullCursorFromXmlWithoutBrokenCursorMissingCursor() throws XMLXPathParserException {
+    public void testStringGetNullCursorFromXmlWithoutBrokenCursorMissingCursor()
+            throws XMLXPathParserException {
         fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(xmlWithBrokenCursorMissingCursor);
     }
-
 
 }
