@@ -2,6 +2,7 @@ package se.uu.ub.cora.fedora.reader.xml;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import se.uu.ub.cora.bookkeeper.data.DataAtomic;
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
 import se.uu.ub.cora.fedora.data.*;
 import se.uu.ub.cora.fedora.reader.FedoraReaderException;
@@ -22,17 +23,13 @@ public class FedoraReaderPureTest {
     private HttpHandlerFactorySpy httpHandlerFactorySpy;
     private HttpHandlerSpy httpHandlerSpy;
     private FedoraReaderXmlHelperSpy fedoraReaderXmlHelperSpy;
-    private XMLXPathParserFactorySpy xmlXPathParserFactorySpy;
-    private XMLXPathParserSpy xmlXPathParserSpy;
 
     private static final String SOME_TYPE = "someType";
     private static final String SOME_OBJECT_ID = "someObjectId";
 
-    private static final String SOME_TYPE_QUERY = "someTypeQuery:";
     private static final String SOME_PID_QUERY = "somePidQuery:";
 
     private static final int DEFAULT_MAX_RESULTS = 100;
-
 
     private static final String SOME_BASE_URL = "someBaseUrl";
 
@@ -99,6 +96,13 @@ public class FedoraReaderPureTest {
 
         assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1);
         assertEquals(httpHandlerSpy.getUrlCountCallFor(EXPECTED_LIST_URL), 0);
+    }
+
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Invalid XML")
+    public void testReadingListWithBadXML() throws FedoraReaderException {
+        fedoraReaderXmlHelperSpy.failPidExtraction = true;
+        FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.readList(SOME_TYPE, EMPTY_FILTER);
     }
 
     @Test
@@ -215,19 +219,641 @@ public class FedoraReaderPureTest {
         assertEquals(result, pidResponseList);
     }
 
+    @Test
+    public void testReadingAListFromStartPositionShouldYieldSomeStrings() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        Map<Integer, String> callCountResponse = new HashMap<>();
+        Map<Integer, Integer> responseCodes = new HashMap<>();
+        responseCodes.put(0, 200);
+        callCountResponse.put(0, SOME_TYPE_REQUEST_XML_RESPONSE);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 42);
+
+        httpHandlerSpy.addQueryResponse(listUrl, callCountResponse, responseCodes, 1);
+        fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, false, pidList);
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(42);
+
+        int start = 2;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+
+        var result = reader.readList(SOME_TYPE, filter);
+
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1 + pidList.size() - start);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(start, pidList.size()));
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test
+    public void testPagingFromStartPositionWithTwoPages() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(3);
+
+        int start = 2;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+        var result = reader.readList(SOME_TYPE, filter);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 3);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 2 + pidList.size() - start);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(start, pidList.size()));
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test
+    public void testPagingFromStartPositionWithThreePages() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5, 6, 7, 8);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(3);
+
+        int start = 2;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+        var result = reader.readList(SOME_TYPE, filter);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 3);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 3 + pidList.size() - start);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(start, pidList.size()));
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test
+    public void testReadingAListFromOtherStartPositionShouldYieldSomeStrings() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        Map<Integer, String> callCountResponse = new HashMap<>();
+        Map<Integer, Integer> responseCodes = new HashMap<>();
+        responseCodes.put(0, 200);
+        callCountResponse.put(0, SOME_TYPE_REQUEST_XML_RESPONSE);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 42);
+
+        httpHandlerSpy.addQueryResponse(listUrl, callCountResponse, responseCodes, 1);
+        fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, false, pidList);
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(42);
+
+        int start = 3;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+
+        var result = reader.readList(SOME_TYPE, filter);
+
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1 + pidList.size() - start);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(start, pidList.size()));
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test
+    public void testPagingFromOtherStartPositionWithTwoPages() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(3);
+
+        int start = 3;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+        var result = reader.readList(SOME_TYPE, filter);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 3);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 2 + pidList.size() - start);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(start, pidList.size()));
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test
+    public void testPagingFromOtherStartPositionWithThreePages() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5, 6, 7, 8);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(3);
+
+        int start = 3;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+        var result = reader.readList(SOME_TYPE, filter);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 3);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 3 + pidList.size() - start);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(start, pidList.size()));
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test
+    public void testReadingAListLimitedByRowsPositionShouldYieldSomeStrings() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        Map<Integer, String> callCountResponse = new HashMap<>();
+        Map<Integer, Integer> responseCodes = new HashMap<>();
+        responseCodes.put(0, 200);
+        callCountResponse.put(0, SOME_TYPE_REQUEST_XML_RESPONSE);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 42);
+
+        httpHandlerSpy.addQueryResponse(listUrl, callCountResponse, responseCodes, 1);
+        fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, false, pidList);
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(42);
+
+        int rows = 4;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+
+        var result = reader.readList(SOME_TYPE, filter);
+
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1 + rows);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(0, rows));
+        assertEquals(result, pidResponseList);
+    }
+
+
+    @Test
+    public void testReadingAListWithRowLimitBeyondAvailableRowsShouldYieldSomeStrings() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        Map<Integer, String> callCountResponse = new HashMap<>();
+        Map<Integer, Integer> responseCodes = new HashMap<>();
+        responseCodes.put(0, 200);
+        callCountResponse.put(0, SOME_TYPE_REQUEST_XML_RESPONSE);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 42);
+
+        httpHandlerSpy.addQueryResponse(listUrl, callCountResponse, responseCodes, 1);
+        fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, false, pidList);
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(42);
+
+        int rows = 7;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+
+        var result = reader.readList(SOME_TYPE, filter);
+
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1 + pidList.size());
+
+        var pidResponseList = getExpectedResponse(pidList);
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test
+    public void testPagingLimitedByRowsWithTwoPages() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(3);
+
+        int rows = 4;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+        var result = reader.readList(SOME_TYPE, filter);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 3);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 2 + rows);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(0, rows));
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test
+    public void testPagingLimitedByRowsWithThreePages() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5, 6, 7, 8);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(3);
+
+        int rows = 6;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+        var result = reader.readList(SOME_TYPE, filter);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 3);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 3 + rows);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(0, rows));
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test
+    public void testReadingAListWithOtherRowLimitShouldYieldSomeStrings() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        Map<Integer, String> callCountResponse = new HashMap<>();
+        Map<Integer, Integer> responseCodes = new HashMap<>();
+        responseCodes.put(0, 200);
+        callCountResponse.put(0, SOME_TYPE_REQUEST_XML_RESPONSE);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 42);
+
+        httpHandlerSpy.addQueryResponse(listUrl, callCountResponse, responseCodes, 1);
+        fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, false, pidList);
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(42);
+
+        int rows = 5;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+
+        var result = reader.readList(SOME_TYPE, filter);
+
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1 + rows);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(0, rows));
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test
+    public void testPagingWithOtherRowLimitWithTwoPages() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(3);
+
+        int rows = 3;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+        var result = reader.readList(SOME_TYPE, filter);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 3);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 2 + rows);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(0, rows));
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test
+    public void testPagingWithOtherRowLimitWithThreePages() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5, 6, 7, 8);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(3);
+
+        int rows = 7;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+        var result = reader.readList(SOME_TYPE, filter);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 3);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 3 + rows);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(0, rows));
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test
+    public void testReadingAListFromStartLimitedByRowsPositionShouldYieldSomeStrings() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        Map<Integer, String> callCountResponse = new HashMap<>();
+        Map<Integer, Integer> responseCodes = new HashMap<>();
+        responseCodes.put(0, 200);
+        callCountResponse.put(0, SOME_TYPE_REQUEST_XML_RESPONSE);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 42);
+
+        httpHandlerSpy.addQueryResponse(listUrl, callCountResponse, responseCodes, 1);
+        fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, false, pidList);
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(42);
+
+        int rows = 3;
+        int start = 1;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+
+        var result = reader.readList(SOME_TYPE, filter);
+
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1 + rows);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(start, start + rows));
+        assertEquals(result, pidResponseList);
+    }
+
+
+    @Test
+    public void testReadingAListFromStartWithRowLimitBeyondAvailableRowsShouldYieldSomeStrings() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        Map<Integer, String> callCountResponse = new HashMap<>();
+        Map<Integer, Integer> responseCodes = new HashMap<>();
+        responseCodes.put(0, 200);
+        callCountResponse.put(0, SOME_TYPE_REQUEST_XML_RESPONSE);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 42);
+
+        httpHandlerSpy.addQueryResponse(listUrl, callCountResponse, responseCodes, 1);
+        fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, false, pidList);
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(42);
+
+        int rows = 7;
+        int start = 1;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+
+        var result = reader.readList(SOME_TYPE, filter);
+
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1 + pidList.size() - start);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(start, pidList.size()));
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test
+    public void testPagingFromStartLimitedByRowsWithTwoPages() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(3);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 3);
+        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+
+        int rows = 4;
+        int start = 1;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+
+        var result = reader.readList(SOME_TYPE, filter);
+
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 2 + rows);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(start, start + rows));
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test
+    public void testPagingFromStartLimitedByRowsWithThreePages() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5, 6, 7, 8);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(3);
+
+        int rows = 6;
+        int start = 1;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+        var result = reader.readList(SOME_TYPE, filter);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 3);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 3 + rows);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(start, start + rows));
+        assertEquals(result, pidResponseList);
+    }
+
+    //TODO: marker
+
+    @Test
+    public void testReadingAListFromOtherStartLimitedByRowsPositionShouldYieldSomeStrings() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        Map<Integer, String> callCountResponse = new HashMap<>();
+        Map<Integer, Integer> responseCodes = new HashMap<>();
+        responseCodes.put(0, 200);
+        callCountResponse.put(0, SOME_TYPE_REQUEST_XML_RESPONSE);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 42);
+
+        httpHandlerSpy.addQueryResponse(listUrl, callCountResponse, responseCodes, 1);
+        fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, false, pidList);
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(42);
+
+        int rows = 1;
+        int start = 2;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+
+        var result = reader.readList(SOME_TYPE, filter);
+
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1 + rows);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(start, start + rows));
+        assertEquals(result, pidResponseList);
+    }
+
+
+    @Test
+    public void testReadingAListFromOtherStartWithRowLimitBeyondAvailableRowsShouldYieldSomeStrings() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        Map<Integer, String> callCountResponse = new HashMap<>();
+        Map<Integer, Integer> responseCodes = new HashMap<>();
+        responseCodes.put(0, 200);
+        callCountResponse.put(0, SOME_TYPE_REQUEST_XML_RESPONSE);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 42);
+
+        httpHandlerSpy.addQueryResponse(listUrl, callCountResponse, responseCodes, 1);
+        fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, false, pidList);
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(42);
+
+        int rows = 7;
+        int start = 5;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+
+        var result = reader.readList(SOME_TYPE, filter);
+
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1 + pidList.size() - start);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(start, pidList.size()));
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test
+    public void testPagingFromOtherStartLimitedByRowsWithTwoPages() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(3);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 3);
+        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+
+        int rows = 1;
+        int start = 4;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+
+        var result = reader.readList(SOME_TYPE, filter);
+
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 2 + rows);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(start, start + rows));
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test
+    public void testPagingFromOtherStartLimitedByRowsWithThreePages() throws FedoraReaderException {
+        var pidList = getSomePidList(1, 2, 3, 4, 5, 6, 7, 8);
+
+        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+
+
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.setMaxResults(3);
+
+        int rows = 5;
+        int start = 2;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+        var result = reader.readList(SOME_TYPE, filter);
+
+        var listUrl = expectedListUrl(SOME_TYPE, 3);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
+        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 3 + rows);
+
+        var pidResponseList = getExpectedResponse(pidList.subList(start, start + rows));
+        assertEquals(result, pidResponseList);
+    }
+
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Invalid start value \\(-12\\)")
+    public void testPagingFromBrokenStartLimitedByRowsWithThreePages() throws FedoraReaderException {
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+
+        int rows = 5;
+        int start = -12;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+        reader.readList(SOME_TYPE, filter);
+    }
+
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Invalid row count \\(-5\\)")
+    public void testPagingFromStartLimitedByBrokenRowsWithThreePages() throws FedoraReaderException {
+        var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+
+        int rows = -5;
+        int start = 12;
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+        reader.readList(SOME_TYPE, filter);
+    }
+
     private List<String> getExpectedResponse(List<String> pidList) {
         return pidList.stream().map(pid -> SOME_PID_REQUEST_XML_RESPONSE + pid).collect(Collectors.toList());
     }
 
-
-    List<String> getSomePidList(Integer... integers) {
+    private List<String> getSomePidList(Integer... integers) {
         return Arrays.stream(integers)
                 .map(this::pidNameFromNumber)
-                .collect(Collectors.toList());
-    }
-
-    List<Integer> getSomePidAccessCountList(Integer... integers) {
-        return Arrays.stream(integers)
                 .collect(Collectors.toList());
     }
 
@@ -235,27 +861,13 @@ public class FedoraReaderPureTest {
         return String.format("somePid:%05d", number);
     }
 
-    void createPagedHttpHandlersForReadList(String type, List<String> pidList) {
-        createPagedHttpHandlersForReadList(type, pidList,
-                pidList.stream().map(itm -> 1).collect(Collectors.toList()),
-                pidList.size(), DEFAULT_MAX_RESULTS);
-    }
-
-    void createPagedHttpHandlersForReadList(String type, List<String> pidList, int maxResults) {
+    private void createPagedHttpHandlersForReadList(String type, List<String> pidList, int maxResults) {
         createPagedHttpHandlersForReadList(type, pidList,
                 pidList.stream().map(itm -> 1).collect(Collectors.toList()),
                 maxResults, maxResults);
     }
 
-    void createPagedHttpHandlersForReadList(String type, List<String> pidList, int pageSize, int maxResults) {
-        createPagedHttpHandlersForReadList(type, pidList,
-                pidList.stream().map(itm -> 1).collect(Collectors.toList()),
-                pageSize, maxResults);
-    }
-
-    void createPagedHttpHandlersForReadList(String type, List<String> pidList, List<Integer> pidAccessCountList, int pageSize, int maxResults) {
-
-
+    private void createPagedHttpHandlersForReadList(String type, List<String> pidList, List<Integer> pidAccessCountList, int pageSize, int maxResults) {
         assert (pidList.size() == pidAccessCountList.size());
         for (int idx = 0; idx < pidList.size(); idx++) {
             createHandlerForPid(pidList.get(idx), pidAccessCountList.get(idx));
@@ -293,9 +905,7 @@ public class FedoraReaderPureTest {
 
             var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
 
-
             httpHandlerSpy.addQueryResponse(listCursorUrl, callCountResponse, responseCodes, expectedNumberOfCalls);
-
         }
     }
 
@@ -327,25 +937,6 @@ public class FedoraReaderPureTest {
         httpHandlerSpy.addQueryResponse(expectedObjectUrl, callCountResponse, responseCodes, accessCount);
     }
 
-    private String getTypeRequestQueryWithCursor(String type, int cursor, int maxResults) {
-        return expectedListUrlWithCursor(type, maxResults, "someToken");
-    }
-
-    private void setupHandlersForRequestWithPidResult(String httpRequestUrl, String httpXmlResponse, int expectedNumberOfCalls, boolean hasCursor, List<String> pidList) {
-        Map<Integer, String> callCountResponse = new HashMap<>();
-        Map<Integer, Integer> responseCodes = new HashMap<>();
-
-
-        for (int i = 0; i < expectedNumberOfCalls; i++) {
-            callCountResponse.put(i, SOME_PID_REQUEST_XML_RESPONSE + pidList.get(i));
-            responseCodes.put(0, 200);
-        }
-
-
-        httpHandlerSpy.addQueryResponse(httpRequestUrl, callCountResponse, responseCodes, expectedNumberOfCalls);
-        fedoraReaderXmlHelperSpy.addPidListForXml(httpXmlResponse, hasCursor, pidList);
-    }
-
     private String expectedObjectUrl(String pid) {
         return String.format("%s/objects/%s/datastreams/METADATA/content", SOME_BASE_URL, pid);
     }
@@ -359,7 +950,6 @@ public class FedoraReaderPureTest {
     }
 
     private String expectedListUrlWithCursor(String type, int maxResults, String token) {
-        //listUrl=String.format("%s/objects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",baseUrl, somePossibleCursorAndPidList.getCursor().getToken(),maxResults, type);
         return String.format("%s/objects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*", SOME_BASE_URL, token, maxResults, type);
     }
 }

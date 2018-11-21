@@ -8,6 +8,7 @@ import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class FedoraReaderPureImp implements FedoraReaderPure {
     private static final int OK = 200;
@@ -53,20 +54,40 @@ public class FedoraReaderPureImp implements FedoraReaderPure {
     public List<String> readList(String type, DataGroup filter) throws FedoraReaderException {
         var listUrl =
                 String.format("%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*", baseUrl, maxResults, type);
-        ArrayList<String> result = getObjectXmlList(type, listUrl);
-
-        return result;
+        var start = Integer.parseInt(filter.getFirstAtomicValueWithNameInDataOrDefault("start", "0"));
+        if (start < 0) {
+            throw new RuntimeException(String.format("Invalid start value (%d)", start));
+        }
+        Optional<Integer> rows = Optional.empty();
+        if (filter.containsChildWithNameInData("rows")) {
+            var rowCount = Integer.parseInt(filter.getFirstAtomicValueWithNameInData("rows"));
+            if (rowCount < 0) {
+                throw new RuntimeException(String.format("Invalid row count (%d)", rowCount));
+            }
+            rows = Optional.of(rowCount);
+        }
+        return getObjectXmlList(type, listUrl, start, rows);
     }
 
-    public ArrayList<String> getObjectXmlList(String type, String listUrl) throws FedoraReaderException {
+    private List<String> getObjectXmlList(String type, String listUrl, int start, Optional<Integer> rows) throws FedoraReaderException {
         var httpHandler = httpHandlerFactory.factor(listUrl);
         var result = new ArrayList<String>();
         throwIfNotOk(type, httpHandler.getResponseCode());
-
         try {
             var somePossibleCursorAndPidList = fedoraReaderXmlHelper.extractPidListAndPossiblyCursor(httpHandler.getResponseText());
             for (var pid : somePossibleCursorAndPidList.getPidList()) {
-                result.add(readObject(pid));
+                if (start <= 0) {
+                    if (rows.isPresent()) {
+                        if (rows.get() > 0) {
+                            result.add(readObject(pid));
+                            rows = Optional.of(rows.get() - 1);
+                        }
+                    } else {
+                        result.add(readObject(pid));
+                    }
+                } else {
+                    start--;
+                }
             }
 
             if (somePossibleCursorAndPidList.getCursor() != null) {
@@ -75,11 +96,11 @@ public class FedoraReaderPureImp implements FedoraReaderPure {
                 listUrl = null;
             }
         } catch (XMLXPathParserException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Invalid XML", e);
         }
 
         if (listUrl != null) {
-            result.addAll(getObjectXmlList(type, listUrl));
+            result.addAll(getObjectXmlList(type, listUrl, start, rows));
         }
 
         return result;

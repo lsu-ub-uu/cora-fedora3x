@@ -31,10 +31,13 @@ public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
     public FedoraReaderPidListWithOptionalCursor extractPidListAndPossiblyCursor(String xml) throws XMLXPathParserException {
         FedoraReaderCursor fedoraReaderCursor = getFedoraReaderCursor(xml);
         ArrayList<String> pidList = getPidList(xml);
+        if(failPidExtraction) {
+            throw new XMLXPathParserException("Bad XML: " + xml);
+        }
         return new FedoraReaderPidListWithOptionalCursor(pidList, fedoraReaderCursor);
     }
 
-    public ArrayList<String> getPidList(String xml) {
+    private ArrayList<String> getPidList(String xml) {
         var pidList = new ArrayList<String>();
         if (pidListsForXml.containsKey(xml)) {
             pidList.addAll(pidListsForXml.get(xml));
@@ -45,7 +48,7 @@ public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
         return pidList;
     }
 
-    public FedoraReaderCursor getFedoraReaderCursor(String xml) {
+    private FedoraReaderCursor getFedoraReaderCursor(String xml) {
         FedoraReaderCursor fedoraReaderCursor = null;
         if (pidListHasCursor.getOrDefault(xml, false)) {
             fedoraReaderCursor = new FedoraReaderCursor("someToken");
