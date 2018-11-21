@@ -6,8 +6,8 @@ import se.uu.ub.cora.fedora.reader.FedoraReaderException;
 import java.util.List;
 
 public interface FedoraReaderPure {
-    String readObject(String objectId) throws FedoraReaderException;
-    List<String> readList(String type, DataGroup filter) throws FedoraReaderException;
+    String readObject(String objectId);
+    List<String> readList(String type, DataGroup filter);
 
     void setMaxResults(int count);
 }

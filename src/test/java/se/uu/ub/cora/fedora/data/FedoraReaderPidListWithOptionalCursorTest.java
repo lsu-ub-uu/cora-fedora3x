@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 public class FedoraReaderPidListWithOptionalCursorTest {
     @Test
@@ -14,7 +15,7 @@ public class FedoraReaderPidListWithOptionalCursorTest {
         var queryParameters = new FedoraReaderPidListWithOptionalCursor(pidList);
 
         assertEquals(queryParameters.getPidList(), pidList);
-        assertEquals(queryParameters.getCursor(), null);
+        assertNull(queryParameters.getCursor());
     }
 
     @Test

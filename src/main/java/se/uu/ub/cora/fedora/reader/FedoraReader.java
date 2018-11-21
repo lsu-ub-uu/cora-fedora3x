@@ -5,6 +5,6 @@ import se.uu.ub.cora.bookkeeper.data.DataGroup;
 import se.uu.ub.cora.spider.data.SpiderReadResult;
 
 public interface FedoraReader {
-    DataElement read(String type, String id) throws FedoraReaderException;
-    SpiderReadResult readList(String type, DataGroup filter) throws FedoraReaderException;
+    DataElement read(String type, String id);
+    SpiderReadResult readList(String type, DataGroup filter);
 }

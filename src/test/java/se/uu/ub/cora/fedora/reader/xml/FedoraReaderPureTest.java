@@ -5,7 +5,6 @@ import org.testng.annotations.Test;
 import se.uu.ub.cora.bookkeeper.data.DataAtomic;
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
 import se.uu.ub.cora.fedora.data.*;
-import se.uu.ub.cora.fedora.reader.FedoraReaderException;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -18,7 +17,7 @@ import static org.testng.Assert.assertNotNull;
 
 public class FedoraReaderPureTest {
     private static final String SOME_TOKEN = "someToken";
-    FedoraReaderPureFactory fedoraReaderPureFactory;
+    private FedoraReaderPureFactory fedoraReaderPureFactory;
 
     private HttpHandlerFactorySpy httpHandlerFactorySpy;
     private HttpHandlerSpy httpHandlerSpy;
@@ -57,7 +56,7 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testThatReadingAnObjectFactoredAnHttpHandlerWithCorrectUrl() throws FedoraReaderException {
+    public void testThatReadingAnObjectFactoredAnHttpHandlerWithCorrectUrl() {
         FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
         reader.readObject(SOME_OBJECT_ID);
 
@@ -65,8 +64,8 @@ public class FedoraReaderPureTest {
         assertEquals(httpHandlerSpy.getUrlCountCallFor(EXPECTED_OBJECT_URL), 0);
     }
 
-    @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "404: " + SOME_OBJECT_ID + " not found.")
-    public void testReadingAnObjectShouldThrowNotFoundIfNotFound() throws FedoraReaderException {
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Fedora object not found: " + SOME_OBJECT_ID)
+    public void testReadingAnObjectShouldThrowNotFoundIfNotFound() {
         Map<Integer, String> callCountResponse = new HashMap<>();
         Map<Integer, Integer> responseCodes = new HashMap<>();
         responseCodes.put(0, 404);
@@ -77,8 +76,8 @@ public class FedoraReaderPureTest {
         reader.readObject(SOME_OBJECT_ID);
     }
 
-    @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "418: failed ...")
-    public void testReadingAnObjectShouldThrowIfNotOk() throws FedoraReaderException {
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Fedora call failed: 418")
+    public void testReadingAnObjectShouldThrowIfNotOk() {
         Map<Integer, String> callCountResponse = new HashMap<>();
         Map<Integer, Integer> responseCodes = new HashMap<>();
         responseCodes.put(0, 418);
@@ -90,7 +89,7 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testReadingListWithDefaultMaxResults() throws FedoraReaderException {
+    public void testReadingListWithDefaultMaxResults() {
         FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
         reader.readList(SOME_TYPE, EMPTY_FILTER);
 
@@ -99,14 +98,14 @@ public class FedoraReaderPureTest {
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Invalid XML")
-    public void testReadingListWithBadXML() throws FedoraReaderException {
+    public void testReadingListWithBadXML() {
         fedoraReaderXmlHelperSpy.failPidExtraction = true;
         FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
         reader.readList(SOME_TYPE, EMPTY_FILTER);
     }
 
     @Test
-    public void testReadingListWithCustomMaxResults() throws FedoraReaderException {
+    public void testReadingListWithCustomMaxResults() {
         String expectedUrl =
                 String.format("%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
                         SOME_BASE_URL, 123, SOME_TYPE);
@@ -118,8 +117,8 @@ public class FedoraReaderPureTest {
         assertEquals(httpHandlerSpy.getUrlCountCallFor(expectedUrl), 0);
     }
 
-    @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "418: failed ...")
-    public void testReadingAListShouldThrowIfNotOk() throws FedoraReaderException {
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Fedora call failed: 418")
+    public void testReadingAListShouldThrowIfNotOk() {
         var failingType = "someFailingType";
         var expectedUrl = expectedListUrl(failingType);
         Map<Integer, String> callCountResponse = new HashMap<>();
@@ -133,9 +132,8 @@ public class FedoraReaderPureTest {
         reader.readList(failingType, EMPTY_FILTER);
     }
 
-
-    @Test(expectedExceptions = FedoraReaderException.class, expectedExceptionsMessageRegExp = "404: someMissingType not found.")
-    public void testReadingAListShouldThrowNotFoundIfNotFound() throws FedoraReaderException {
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Fedora object not found: someMissingType")
+    public void testReadingAListShouldThrowNotFoundIfNotFound() {
         var missingType = "someMissingType";
         var expectedUrl = expectedListUrl(missingType);
         Map<Integer, String> callCountResponse = new HashMap<>();
@@ -149,10 +147,10 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testReadingAListShouldYieldSomeStrings() throws FedoraReaderException {
+    public void testReadingAListShouldYieldSomeStrings() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        createPagedHttpHandlersForReadList(pidList, 42);
         Map<Integer, String> callCountResponse = new HashMap<>();
         Map<Integer, Integer> responseCodes = new HashMap<>();
         responseCodes.put(0, 200);
@@ -176,10 +174,10 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testPagingWithTwoPages() throws FedoraReaderException {
+    public void testPagingWithTwoPages() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+        createPagedHttpHandlersForReadList(pidList, 3);
 
 
         var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
@@ -189,7 +187,7 @@ public class FedoraReaderPureTest {
 
         var listUrl = expectedListUrl(SOME_TYPE, 3);
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
-        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        var listCursorUrl = expectedListUrlWithCursor();
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
         assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 2 + pidList.size());
 
@@ -198,10 +196,10 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testPagingWithThreePages() throws FedoraReaderException {
+    public void testPagingWithThreePages() {
         var pidList = getSomePidList(1, 2, 3, 4, 5, 6, 7, 8);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+        createPagedHttpHandlersForReadList(pidList, 3);
 
 
         var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
@@ -211,7 +209,7 @@ public class FedoraReaderPureTest {
 
         var listUrl = expectedListUrl(SOME_TYPE, 3);
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
-        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        var listCursorUrl = expectedListUrlWithCursor();
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
         assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 3 + pidList.size());
 
@@ -220,10 +218,10 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testReadingAListFromStartPositionShouldYieldSomeStrings() throws FedoraReaderException {
+    public void testReadingAListFromStartPositionShouldYieldSomeStrings() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        createPagedHttpHandlersForReadList(pidList, 42);
         Map<Integer, String> callCountResponse = new HashMap<>();
         Map<Integer, Integer> responseCodes = new HashMap<>();
         responseCodes.put(0, 200);
@@ -251,10 +249,10 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testPagingFromStartPositionWithTwoPages() throws FedoraReaderException {
+    public void testPagingFromStartPositionWithTwoPages() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+        createPagedHttpHandlersForReadList(pidList, 3);
 
 
         var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
@@ -267,7 +265,7 @@ public class FedoraReaderPureTest {
 
         var listUrl = expectedListUrl(SOME_TYPE, 3);
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
-        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        var listCursorUrl = expectedListUrlWithCursor();
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
         assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 2 + pidList.size() - start);
 
@@ -276,10 +274,10 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testPagingFromStartPositionWithThreePages() throws FedoraReaderException {
+    public void testPagingFromStartPositionWithThreePages() {
         var pidList = getSomePidList(1, 2, 3, 4, 5, 6, 7, 8);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+        createPagedHttpHandlersForReadList(pidList, 3);
 
 
         var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
@@ -292,7 +290,7 @@ public class FedoraReaderPureTest {
 
         var listUrl = expectedListUrl(SOME_TYPE, 3);
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
-        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        var listCursorUrl = expectedListUrlWithCursor();
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
         assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 3 + pidList.size() - start);
 
@@ -301,10 +299,10 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testReadingAListFromOtherStartPositionShouldYieldSomeStrings() throws FedoraReaderException {
+    public void testReadingAListFromOtherStartPositionShouldYieldSomeStrings() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        createPagedHttpHandlersForReadList(pidList, 42);
         Map<Integer, String> callCountResponse = new HashMap<>();
         Map<Integer, Integer> responseCodes = new HashMap<>();
         responseCodes.put(0, 200);
@@ -332,10 +330,10 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testPagingFromOtherStartPositionWithTwoPages() throws FedoraReaderException {
+    public void testPagingFromOtherStartPositionWithTwoPages() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+        createPagedHttpHandlersForReadList(pidList, 3);
 
 
         var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
@@ -348,7 +346,7 @@ public class FedoraReaderPureTest {
 
         var listUrl = expectedListUrl(SOME_TYPE, 3);
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
-        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        var listCursorUrl = expectedListUrlWithCursor();
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
         assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 2 + pidList.size() - start);
 
@@ -357,10 +355,10 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testPagingFromOtherStartPositionWithThreePages() throws FedoraReaderException {
+    public void testPagingFromOtherStartPositionWithThreePages() {
         var pidList = getSomePidList(1, 2, 3, 4, 5, 6, 7, 8);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+        createPagedHttpHandlersForReadList(pidList, 3);
 
 
         var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
@@ -373,7 +371,7 @@ public class FedoraReaderPureTest {
 
         var listUrl = expectedListUrl(SOME_TYPE, 3);
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
-        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        var listCursorUrl = expectedListUrlWithCursor();
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
         assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 3 + pidList.size() - start);
 
@@ -382,10 +380,10 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testReadingAListLimitedByRowsPositionShouldYieldSomeStrings() throws FedoraReaderException {
+    public void testReadingAListLimitedByRowsPositionShouldYieldSomeStrings() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        createPagedHttpHandlersForReadList(pidList, 42);
         Map<Integer, String> callCountResponse = new HashMap<>();
         Map<Integer, Integer> responseCodes = new HashMap<>();
         responseCodes.put(0, 200);
@@ -414,10 +412,10 @@ public class FedoraReaderPureTest {
 
 
     @Test
-    public void testReadingAListWithRowLimitBeyondAvailableRowsShouldYieldSomeStrings() throws FedoraReaderException {
+    public void testReadingAListWithRowLimitBeyondAvailableRowsShouldYieldSomeStrings() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        createPagedHttpHandlersForReadList(pidList, 42);
         Map<Integer, String> callCountResponse = new HashMap<>();
         Map<Integer, Integer> responseCodes = new HashMap<>();
         responseCodes.put(0, 200);
@@ -445,10 +443,10 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testPagingLimitedByRowsWithTwoPages() throws FedoraReaderException {
+    public void testPagingLimitedByRowsWithTwoPages() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+        createPagedHttpHandlersForReadList(pidList, 3);
 
 
         var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
@@ -461,7 +459,7 @@ public class FedoraReaderPureTest {
 
         var listUrl = expectedListUrl(SOME_TYPE, 3);
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
-        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        var listCursorUrl = expectedListUrlWithCursor();
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
         assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 2 + rows);
 
@@ -470,10 +468,10 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testPagingLimitedByRowsWithThreePages() throws FedoraReaderException {
+    public void testPagingLimitedByRowsWithThreePages() {
         var pidList = getSomePidList(1, 2, 3, 4, 5, 6, 7, 8);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+        createPagedHttpHandlersForReadList(pidList, 3);
 
 
         var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
@@ -486,19 +484,19 @@ public class FedoraReaderPureTest {
 
         var listUrl = expectedListUrl(SOME_TYPE, 3);
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
-        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
-        assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
-        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 3 + rows);
+        var listCursorUrl = expectedListUrlWithCursor();
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 1);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 2 + rows);
 
         var pidResponseList = getExpectedResponse(pidList.subList(0, rows));
         assertEquals(result, pidResponseList);
     }
 
     @Test
-    public void testReadingAListWithOtherRowLimitShouldYieldSomeStrings() throws FedoraReaderException {
+    public void testReadingAListWithOtherRowLimitShouldYieldSomeStrings() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        createPagedHttpHandlersForReadList(pidList, 42);
         Map<Integer, String> callCountResponse = new HashMap<>();
         Map<Integer, Integer> responseCodes = new HashMap<>();
         responseCodes.put(0, 200);
@@ -526,10 +524,10 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testPagingWithOtherRowLimitWithTwoPages() throws FedoraReaderException {
+    public void testPagingWithOtherRowLimitWithTwoPages() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+        createPagedHttpHandlersForReadList(pidList, 3);
 
 
         var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
@@ -542,19 +540,19 @@ public class FedoraReaderPureTest {
 
         var listUrl = expectedListUrl(SOME_TYPE, 3);
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
-        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
-        assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
-        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 2 + rows);
+        var listCursorUrl = expectedListUrlWithCursor();
+        assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 1);
+        assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1 + rows);
 
         var pidResponseList = getExpectedResponse(pidList.subList(0, rows));
         assertEquals(result, pidResponseList);
     }
 
     @Test
-    public void testPagingWithOtherRowLimitWithThreePages() throws FedoraReaderException {
+    public void testPagingWithOtherRowLimitWithThreePages() {
         var pidList = getSomePidList(1, 2, 3, 4, 5, 6, 7, 8);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+        createPagedHttpHandlersForReadList(pidList, 3);
 
 
         var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
@@ -567,7 +565,7 @@ public class FedoraReaderPureTest {
 
         var listUrl = expectedListUrl(SOME_TYPE, 3);
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
-        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        var listCursorUrl = expectedListUrlWithCursor();
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
         assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 3 + rows);
 
@@ -576,10 +574,10 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testReadingAListFromStartLimitedByRowsPositionShouldYieldSomeStrings() throws FedoraReaderException {
+    public void testReadingAListFromStartLimitedByRowsPositionShouldYieldSomeStrings() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        createPagedHttpHandlersForReadList(pidList, 42);
         Map<Integer, String> callCountResponse = new HashMap<>();
         Map<Integer, Integer> responseCodes = new HashMap<>();
         responseCodes.put(0, 200);
@@ -610,10 +608,10 @@ public class FedoraReaderPureTest {
 
 
     @Test
-    public void testReadingAListFromStartWithRowLimitBeyondAvailableRowsShouldYieldSomeStrings() throws FedoraReaderException {
+    public void testReadingAListFromStartWithRowLimitBeyondAvailableRowsShouldYieldSomeStrings() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        createPagedHttpHandlersForReadList(pidList, 42);
         Map<Integer, String> callCountResponse = new HashMap<>();
         Map<Integer, Integer> responseCodes = new HashMap<>();
         responseCodes.put(0, 200);
@@ -643,17 +641,17 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testPagingFromStartLimitedByRowsWithTwoPages() throws FedoraReaderException {
+    public void testPagingFromStartLimitedByRowsWithTwoPages() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+        createPagedHttpHandlersForReadList(pidList, 3);
 
 
         var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
         reader.setMaxResults(3);
 
         var listUrl = expectedListUrl(SOME_TYPE, 3);
-        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        var listCursorUrl = expectedListUrlWithCursor();
 
         int rows = 4;
         int start = 1;
@@ -672,10 +670,10 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testPagingFromStartLimitedByRowsWithThreePages() throws FedoraReaderException {
+    public void testPagingFromStartLimitedByRowsWithThreePages() {
         var pidList = getSomePidList(1, 2, 3, 4, 5, 6, 7, 8);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+        createPagedHttpHandlersForReadList(pidList, 3);
 
 
         var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
@@ -690,7 +688,7 @@ public class FedoraReaderPureTest {
 
         var listUrl = expectedListUrl(SOME_TYPE, 3);
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
-        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        var listCursorUrl = expectedListUrlWithCursor();
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
         assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 3 + rows);
 
@@ -701,10 +699,10 @@ public class FedoraReaderPureTest {
     //TODO: marker
 
     @Test
-    public void testReadingAListFromOtherStartLimitedByRowsPositionShouldYieldSomeStrings() throws FedoraReaderException {
+    public void testReadingAListFromOtherStartLimitedByRowsPositionShouldYieldSomeStrings() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        createPagedHttpHandlersForReadList(pidList, 42);
         Map<Integer, String> callCountResponse = new HashMap<>();
         Map<Integer, Integer> responseCodes = new HashMap<>();
         responseCodes.put(0, 200);
@@ -735,10 +733,10 @@ public class FedoraReaderPureTest {
 
 
     @Test
-    public void testReadingAListFromOtherStartWithRowLimitBeyondAvailableRowsShouldYieldSomeStrings() throws FedoraReaderException {
+    public void testReadingAListFromOtherStartWithRowLimitBeyondAvailableRowsShouldYieldSomeStrings() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 42);
+        createPagedHttpHandlersForReadList(pidList, 42);
         Map<Integer, String> callCountResponse = new HashMap<>();
         Map<Integer, Integer> responseCodes = new HashMap<>();
         responseCodes.put(0, 200);
@@ -768,17 +766,17 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testPagingFromOtherStartLimitedByRowsWithTwoPages() throws FedoraReaderException {
+    public void testPagingFromOtherStartLimitedByRowsWithTwoPages() {
         var pidList = getSomePidList(1, 2, 3, 4, 5);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+        createPagedHttpHandlersForReadList(pidList, 3);
 
 
         var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
         reader.setMaxResults(3);
 
         var listUrl = expectedListUrl(SOME_TYPE, 3);
-        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        var listCursorUrl = expectedListUrlWithCursor();
 
         int rows = 1;
         int start = 4;
@@ -797,10 +795,10 @@ public class FedoraReaderPureTest {
     }
 
     @Test
-    public void testPagingFromOtherStartLimitedByRowsWithThreePages() throws FedoraReaderException {
+    public void testPagingFromOtherStartLimitedByRowsWithThreePages() {
         var pidList = getSomePidList(1, 2, 3, 4, 5, 6, 7, 8);
 
-        createPagedHttpHandlersForReadList(SOME_TYPE, pidList, 3);
+        createPagedHttpHandlersForReadList(pidList, 3);
 
 
         var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
@@ -815,7 +813,7 @@ public class FedoraReaderPureTest {
 
         var listUrl = expectedListUrl(SOME_TYPE, 3);
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
-        var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+        var listCursorUrl = expectedListUrlWithCursor();
         assertEquals(httpHandlerSpy.getUrlCountCallFor(listCursorUrl), 0);
         assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 3 + rows);
 
@@ -824,7 +822,7 @@ public class FedoraReaderPureTest {
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Invalid start value \\(-12\\)")
-    public void testPagingFromBrokenStartLimitedByRowsWithThreePages() throws FedoraReaderException {
+    public void testPagingFromBrokenStartLimitedByRowsWithThreePages() {
         var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
 
         int rows = 5;
@@ -836,7 +834,7 @@ public class FedoraReaderPureTest {
     }
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Invalid row count \\(-5\\)")
-    public void testPagingFromStartLimitedByBrokenRowsWithThreePages() throws FedoraReaderException {
+    public void testPagingFromStartLimitedByBrokenRowsWithThreePages() {
         var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
 
         int rows = -5;
@@ -861,25 +859,25 @@ public class FedoraReaderPureTest {
         return String.format("somePid:%05d", number);
     }
 
-    private void createPagedHttpHandlersForReadList(String type, List<String> pidList, int maxResults) {
-        createPagedHttpHandlersForReadList(type, pidList,
+    private void createPagedHttpHandlersForReadList(List<String> pidList, int maxResults) {
+        createPagedHttpHandlersForReadList(pidList,
                 pidList.stream().map(itm -> 1).collect(Collectors.toList()),
                 maxResults, maxResults);
     }
 
-    private void createPagedHttpHandlersForReadList(String type, List<String> pidList, List<Integer> pidAccessCountList, int pageSize, int maxResults) {
+    private void createPagedHttpHandlersForReadList(List<String> pidList, List<Integer> pidAccessCountList, int pageSize, int maxResults) {
         assert (pidList.size() == pidAccessCountList.size());
         for (int idx = 0; idx < pidList.size(); idx++) {
             createHandlerForPid(pidList.get(idx), pidAccessCountList.get(idx));
         }
 
         if (pidList.size() <= pageSize) {
-            createResponsesForPage(type, pidList, maxResults, false);
+            createResponsesForPage(pidList, maxResults);
         } else {
 
             var expectedNumberOfCalls = (int) Math.ceil((float) pidList.size() / (float) pageSize) - 1;
 
-            httpHandlerSpy.addQueryResponse(expectedListUrl(type, maxResults),
+            httpHandlerSpy.addQueryResponse(expectedListUrl(FedoraReaderPureTest.SOME_TYPE, maxResults),
                     Map.of(0, SOME_TYPE_REQUEST_XML_RESPONSE),
                     Map.of(0, 200), 1);
 
@@ -903,26 +901,21 @@ public class FedoraReaderPureTest {
             fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE + 0,
                     false, pidList.subList(pageSize * expectedNumberOfCalls, pidList.size()));
 
-            var listCursorUrl = expectedListUrlWithCursor(SOME_TYPE, 3, SOME_TOKEN);
+            var listCursorUrl = expectedListUrlWithCursor();
 
             httpHandlerSpy.addQueryResponse(listCursorUrl, callCountResponse, responseCodes, expectedNumberOfCalls);
         }
     }
 
-    private void createResponsesForPage(String type, List<String> pidList, int maxResults, boolean hasCursor) {
-        String typeQuery;
-        if (hasCursor) {
-            typeQuery = expectedListUrlWithCursor(type, maxResults, SOME_TOKEN);
-        } else {
-            typeQuery = expectedListUrl(type, maxResults);
-        }
+    private void createResponsesForPage(List<String> pidList, int maxResults) {
+        String typeQuery = expectedListUrl(FedoraReaderPureTest.SOME_TYPE, maxResults);
 
         Map<Integer, String> callCountResponse = new HashMap<>();
         Map<Integer, Integer> responseCodes = new HashMap<>();
         callCountResponse.put(0, SOME_TYPE_REQUEST_XML_RESPONSE);
         responseCodes.put(0, 200);
         httpHandlerSpy.addQueryResponse(typeQuery, callCountResponse, responseCodes, 1);
-        fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, hasCursor, pidList);
+        fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, false, pidList);
     }
 
     private void createHandlerForPid(String pid, int accessCount) {
@@ -949,7 +942,7 @@ public class FedoraReaderPureTest {
         return String.format("%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*", SOME_BASE_URL, maxResults, type);
     }
 
-    private String expectedListUrlWithCursor(String type, int maxResults, String token) {
-        return String.format("%s/objects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*", SOME_BASE_URL, token, maxResults, type);
+    private String expectedListUrlWithCursor() {
+        return String.format("%s/objects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*", SOME_BASE_URL, FedoraReaderPureTest.SOME_TOKEN, 3, FedoraReaderPureTest.SOME_TYPE);
     }
 }
