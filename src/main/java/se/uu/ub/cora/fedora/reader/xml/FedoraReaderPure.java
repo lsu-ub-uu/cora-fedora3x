@@ -1,7 +1,6 @@
 package se.uu.ub.cora.fedora.reader.xml;
 
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
-import se.uu.ub.cora.fedora.reader.FedoraReaderException;
 
 import java.util.List;
 

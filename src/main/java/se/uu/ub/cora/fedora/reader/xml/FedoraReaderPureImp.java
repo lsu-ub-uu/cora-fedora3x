@@ -1,8 +1,8 @@
 package se.uu.ub.cora.fedora.reader.xml;
 
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
+
 import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelper;
-import se.uu.ub.cora.fedora.data.XMLXPathParserException;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
 import java.util.ArrayList;
