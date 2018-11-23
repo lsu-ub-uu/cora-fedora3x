@@ -1,61 +1,56 @@
 package se.uu.ub.cora.fedora.data;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
-    public Map<String, List<String>> pidListsForXml;
-    public Map<String, Boolean> pidListHasCursor;
+    public List<String> pidList;
 
     public boolean failPidExtraction;
 
     public FedoraReaderXmlHelperSpy() {
         failPidExtraction = false;
-        pidListsForXml = new HashMap<>();
-        pidListHasCursor = new HashMap<>();
     }
 
     public void addPidListForXml(String xml, boolean hasCursor, List<String> pidList) {
-        pidListsForXml.put(xml, pidList);
-        pidListHasCursor.put(xml, hasCursor);
     }
 
     @Override
-    public FedoraReaderPidListWithOptionalCursor extractPidListAndPossiblyCursor(XMLXPathParser xmlxPathParser) throws XMLXPathParserException {
-        return new FedoraReaderPidListWithOptionalCursor(extractPidList(xmlxPathParser), extractCursor(xmlxPathParser));
-    }
-
-    @Override
-    public FedoraReaderPidListWithOptionalCursor extractPidListAndPossiblyCursor(String xml) throws XMLXPathParserException {
-        FedoraReaderCursor fedoraReaderCursor = getFedoraReaderCursor(xml);
-        ArrayList<String> pidList = getPidList(xml);
-        if(failPidExtraction) {
-            throw new XMLXPathParserException("Bad XML: " + xml);
-        }
-        return new FedoraReaderPidListWithOptionalCursor(pidList, fedoraReaderCursor);
-    }
-
-    private ArrayList<String> getPidList(String xml) {
-        var pidList = new ArrayList<String>();
-        if (pidListsForXml.containsKey(xml)) {
-            pidList.addAll(pidListsForXml.get(xml));
-        } else {
-            System.err.println("FedoraReaderXMLHelperSpy::pidListForXml does not contain key: " + xml);
-
-        }
-        return pidList;
-    }
-
-    private FedoraReaderCursor getFedoraReaderCursor(String xml) {
+    public FedoraReaderCursor getCursorIfAvailable(String xml) {
         FedoraReaderCursor fedoraReaderCursor = null;
-        if (pidListHasCursor.getOrDefault(xml, false)) {
-            fedoraReaderCursor = new FedoraReaderCursor("someToken");
+        if(pidList == null) {
+            fedoraReaderCursor = new FedoraReaderCursor("someUninitializedToken");
         } else {
-            System.err.println("FedoraReaderXMLHelperSpy::pidListHasCursor does not contain key: " + xml);
+            if (!pidList.isEmpty()) {
+                fedoraReaderCursor = new FedoraReaderCursor("someToken");
+            }
         }
         return fedoraReaderCursor;
+    }
+
+    @Override
+    public List<String> getPidList(String xml) {
+        if(failPidExtraction) {
+            throw new RuntimeException("Bad XML: " + xml);
+        }
+        Pattern p = Pattern.compile(".+maxResults=(\\d+).+");
+        Matcher m = p.matcher(xml);
+        if(m.find()) {
+            int maxResults = Integer.parseInt(m.group(1));
+            if(pidList == null || pidList.size() < maxResults) {
+                List<String> madeUpPidList = new ArrayList<>();
+                for(int idx = 0; idx < maxResults; idx++) {
+                    madeUpPidList.add("generatedPid:" + idx);
+                }
+                return madeUpPidList;
+            }
+            List<String> requestedPidList = pidList.subList(0, maxResults);
+            pidList = pidList.subList(maxResults, pidList.size());
+            return requestedPidList;
+        }
+        return List.of();
     }
 
     @Override
@@ -68,29 +63,4 @@ public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
         return null;
     }
 
-    private List<String> extractPidList(XMLXPathParser xmlxPathParser) throws XMLXPathParserException {
-        if (failPidExtraction) {
-            throw new XMLXPathParserException("pid extraction failed");
-        }
-        if (xmlxPathParser instanceof XMLXPathParserSpy) {
-            var xmlPathParserSpy = (XMLXPathParserSpy) xmlxPathParser;
-            String lastParsedXml = xmlPathParserSpy.getLastParsedXml();
-            if (pidListsForXml.containsKey(lastParsedXml)) {
-                return pidListsForXml.get(lastParsedXml);
-            }
-        }
-        return new ArrayList<>();
-    }
-
-    private FedoraReaderCursor extractCursor(XMLXPathParser xmlxPathParser) {
-        if (xmlxPathParser instanceof XMLXPathParserSpy) {
-            var xmlPathParserSpy = (XMLXPathParserSpy) xmlxPathParser;
-            String lastParsedXml = xmlPathParserSpy.getLastParsedXml();
-
-            if (pidListHasCursor.getOrDefault(lastParsedXml, false)) {
-                return new FedoraReaderCursor(lastParsedXml);
-            }
-        }
-        return null;
-    }
 }

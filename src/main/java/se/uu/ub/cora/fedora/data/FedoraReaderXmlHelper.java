@@ -1,10 +1,10 @@
 package se.uu.ub.cora.fedora.data;
 
-public interface FedoraReaderXmlHelper {
-    @Deprecated
-    FedoraReaderPidListWithOptionalCursor extractPidListAndPossiblyCursor(XMLXPathParser xmlxPathParser) throws XMLXPathParserException;
-    FedoraReaderPidListWithOptionalCursor extractPidListAndPossiblyCursor(String xml) throws XMLXPathParserException;
+import java.util.List;
 
+public interface FedoraReaderXmlHelper {
+    FedoraReaderCursor getCursorIfAvailable(String xml);
+    List<String> getPidList(String xml);
     void setXmlXPathParseFactory(XMLXPathParserFactory xmlXPathParserFactory);
     XMLXPathParserFactory getXmlXPathParseFactory();
 }

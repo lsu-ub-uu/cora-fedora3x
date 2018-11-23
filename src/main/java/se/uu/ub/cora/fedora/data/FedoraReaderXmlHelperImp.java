@@ -9,14 +9,23 @@ public class FedoraReaderXmlHelperImp implements FedoraReaderXmlHelper {
 	private XMLXPathParserFactory xmlXPathParserFactory;
 
 	@Override
-	public FedoraReaderPidListWithOptionalCursor extractPidListAndPossiblyCursor(XMLXPathParser xmlxPathParser) throws XMLXPathParserException {
-		return new FedoraReaderPidListWithOptionalCursor(extractPidList(xmlxPathParser), extractCursor(xmlxPathParser));
+	public FedoraReaderCursor getCursorIfAvailable(String xml) {
+		try {
+			var xmlXPathParsers = xmlXPathParserFactory.factor().forXML(xml);
+			return extractCursor(xmlXPathParsers);
+		} catch (XMLXPathParserException e) {
+			throw new RuntimeException("malformed cursor", e);
+		}
 	}
 
 	@Override
-	public FedoraReaderPidListWithOptionalCursor extractPidListAndPossiblyCursor(String xml) throws XMLXPathParserException {
-		var xmlXPathParsers = xmlXPathParserFactory.factor().forXML(xml);
-		return new FedoraReaderPidListWithOptionalCursor(extractPidList(xmlXPathParsers), extractCursor(xmlXPathParsers));
+	public List<String> getPidList(String xml) {
+		try {
+			var xmlXPathParsers = xmlXPathParserFactory.factor().forXML(xml);
+			return extractPidList(xmlXPathParsers);
+		} catch (XMLXPathParserException e) {
+			throw new RuntimeException("There was no resultList in given XML", e);
+		}
 	}
 
 	@Override
