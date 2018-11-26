@@ -93,7 +93,7 @@ public class FedoraReaderPureTest {
         reader.readList(SOME_TYPE, EMPTY_FILTER);
     }
 
-    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Invalid XML")
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "FedoraReader: Bad XML:.+")
     public void testReadingFromStartRowsListWithBadXML() {
         fedoraReaderXmlHelperSpy.failPidExtraction = true;
         FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
@@ -107,7 +107,6 @@ public class FedoraReaderPureTest {
         reader.readList(SOME_TYPE, filter);
     }
 
-
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Invalid XML")
     public void testReadingRowsListWithBadXML() {
         fedoraReaderXmlHelperSpy.failPidExtraction = true;
@@ -119,7 +118,6 @@ public class FedoraReaderPureTest {
 
         reader.readList(SOME_TYPE, filter);
     }
-
 
     @Test
     public void testReadingListWithCustomMaxResults() {
@@ -155,6 +153,20 @@ public class FedoraReaderPureTest {
         FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
         reader.readList(failingType, filter);
     }
+
+
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "FedoraReader: Fedora call failed: 418")
+    public void testReadingAListWithStartShouldThrowIfNotOk() {
+        var failingType = "someFailingType";
+
+        httpHandlerSpy.urlCallResponseCode.push(418);
+        var filter = DataGroup.withNameInData("filter");
+        filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(42)));
+
+        FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+        reader.readList(failingType, filter);
+    }
+
 
     @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Fedora object not found: someMissingType")
     public void testReadingAListShouldThrowNotFoundIfNotFound() {

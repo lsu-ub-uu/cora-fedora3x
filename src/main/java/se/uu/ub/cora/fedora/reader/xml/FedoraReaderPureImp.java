@@ -94,7 +94,7 @@ public class FedoraReaderPureImp implements FedoraReaderPure {
 				listUrl = getFedoraCursorUrlForType(type, start, cursor);
 			}
 		} catch (Exception e) {
-			throw new RuntimeException("Invalid XML", e);
+			throw new RuntimeException("FedoraReader: " + e.getMessage(), e);
 		}
 		return listUrl;
 	}
