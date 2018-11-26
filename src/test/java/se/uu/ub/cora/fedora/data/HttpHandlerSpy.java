@@ -24,7 +24,7 @@ public class HttpHandlerSpy implements HttpHandler {
     public String getResponseText() {
         if(urlCallResponseText.isEmpty()) {
             if(!urlCall.isEmpty()) {
-                return urlCall.peek();
+                return urlCall.peek() + " xml response";
             }
             return "someHttpResponse";
         }
