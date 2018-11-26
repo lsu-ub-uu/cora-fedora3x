@@ -86,7 +86,7 @@ public class FedoraReaderPureTest {
         assertEquals(httpHandlerSpy.urlCall.elementAt(0), EXPECTED_LIST_URL);
     }
 
-    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Invalid XML")
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "FedoraReader: Bad XML:.+")
     public void testReadingListWithBadXML() {
         fedoraReaderXmlHelperSpy.failPidExtraction = true;
         FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
@@ -133,7 +133,7 @@ public class FedoraReaderPureTest {
         assertEquals(results.size(), 123);
     }
 
-    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Fedora call failed: 418")
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "FedoraReader: Fedora call failed: 418")
     public void testReadingAListShouldThrowIfNotOk() {
         var failingType = "someFailingType";
         httpHandlerSpy.urlCallResponseCode.push(418);
@@ -168,7 +168,7 @@ public class FedoraReaderPureTest {
     }
 
 
-    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Fedora object not found: someMissingType")
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "FedoraReader: Fedora object not found: someMissingType")
     public void testReadingAListShouldThrowNotFoundIfNotFound() {
         var missingType = "someMissingType";
         httpHandlerSpy.urlCallResponseCode.push(404);
