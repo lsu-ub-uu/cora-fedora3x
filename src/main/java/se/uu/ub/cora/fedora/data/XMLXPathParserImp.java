@@ -1,4 +1,35 @@
+/*
+ * Copyright 2018 Uppsala University Library
+ *
+ * This file is part of Cora.
+ *
+ *     Cora is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     Cora is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package se.uu.ub.cora.fedora.data;
+
+import java.io.IOException;
+import java.io.StringReader;
+
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -8,14 +39,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.*;
-import java.io.IOException;
-import java.io.StringReader;
-
 public final class XMLXPathParserImp implements XMLXPathParser {
 	private Document document;
 	private XPath xpath;
@@ -23,6 +46,7 @@ public final class XMLXPathParserImp implements XMLXPathParser {
 	public XMLXPathParserImp() {
 	}
 
+	@Override
 	public XMLXPathParser forXML(String xml) throws XMLXPathParserException {
 		try {
 			document = createDocumentFromXML(xml);
@@ -73,7 +97,9 @@ public final class XMLXPathParserImp implements XMLXPathParser {
 		return doc;
 	}
 
-	public String getStringFromDocumentUsingXPath(String xpathString) throws XMLXPathParserException {
+	@Override
+	public String getStringFromDocumentUsingXPath(String xpathString)
+			throws XMLXPathParserException {
 		try {
 			XPathExpression expr = xpath.compile(xpathString);
 			return (String) expr.evaluate(document, XPathConstants.STRING);
@@ -86,7 +112,9 @@ public final class XMLXPathParserImp implements XMLXPathParser {
 		return "Unable to use xpathString: " + e.getMessage();
 	}
 
-	public String getStringFromNodeUsingXPath(Node node, String xpathString) throws XMLXPathParserException {
+	@Override
+	public String getStringFromNodeUsingXPath(Node node, String xpathString)
+			throws XMLXPathParserException {
 		try {
 			XPathExpression expr = xpath.compile(xpathString);
 			return (String) expr.evaluate(node, XPathConstants.STRING);
@@ -95,7 +123,9 @@ public final class XMLXPathParserImp implements XMLXPathParser {
 		}
 	}
 
-	public NodeList getNodeListFromDocumentUsingXPath(String xpathString) throws XMLXPathParserException {
+	@Override
+	public NodeList getNodeListFromDocumentUsingXPath(String xpathString)
+			throws XMLXPathParserException {
 		try {
 			XPathExpression expr = xpath.compile(xpathString);
 			return (NodeList) expr.evaluate(document, XPathConstants.NODESET);

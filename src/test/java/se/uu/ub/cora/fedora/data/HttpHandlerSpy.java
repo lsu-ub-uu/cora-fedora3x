@@ -1,70 +1,94 @@
+/*
+ * Copyright 2018 Uppsala University Library
+ *
+ * This file is part of Cora.
+ *
+ *     Cora is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     Cora is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package se.uu.ub.cora.fedora.data;
+
+import java.io.InputStream;
+import java.util.Map;
+import java.util.Stack;
 
 import se.uu.ub.cora.httphandler.HttpHandler;
 
-import java.io.InputStream;
-import java.util.*;
-
 public class HttpHandlerSpy implements HttpHandler {
-    public Stack<String> urlCall = new Stack<>();
-    public Stack<String> urlCallResponseText = new Stack<>();
-    public Stack<Integer> urlCallResponseCode = new Stack<>();
+	public Stack<String> urlCall = new Stack<>();
+	public Stack<String> urlCallResponseText = new Stack<>();
+	public Stack<Integer> urlCallResponseCode = new Stack<>();
 
-    void wasCalledWith(String url) {
-        urlCall.push(url);
-    }
-    public void addQueryResponse(String a, Map<Integer, String> b, Map<Integer, Integer>c, int d) {}
-    public int getUrlCountCallFor(String a) { return 0; }
+	void wasCalledWith(String url) {
+		urlCall.push(url);
+	}
 
-    @Override
-    public void setRequestMethod(String requestMethod) {
-    }
+	public void addQueryResponse(String a, Map<Integer, String> b, Map<Integer, Integer> c, int d) {
+	}
 
-    @Override
-    public String getResponseText() {
-        if(urlCallResponseText.isEmpty()) {
-            if(!urlCall.isEmpty()) {
-                return urlCall.peek() + " xml response";
-            }
-            return "someHttpResponse";
-        }
-        return urlCallResponseText.pop();
-    }
+	public int getUrlCountCallFor(String a) {
+		return 0;
+	}
 
-    @Override
-    public int getResponseCode() {
-        if(urlCallResponseCode.isEmpty()) {
-            return 200;
-        }
-        return urlCallResponseCode.pop();
-    }
+	@Override
+	public void setRequestMethod(String requestMethod) {
+	}
 
-    @Override
-    public void setOutput(String outputString) {
-        // TODO Auto-generated method stub
-    }
+	@Override
+	public String getResponseText() {
+		if (urlCallResponseText.isEmpty()) {
+			if (!urlCall.isEmpty()) {
+				return urlCall.peek() + " xml response";
+			}
+			return "someHttpResponse";
+		}
+		return urlCallResponseText.pop();
+	}
 
-    @Override
-    public void setRequestProperty(String key, String value) {
-        // TODO Auto-generated method stub
+	@Override
+	public int getResponseCode() {
+		if (urlCallResponseCode.isEmpty()) {
+			return 200;
+		}
+		return urlCallResponseCode.pop();
+	}
 
-    }
+	@Override
+	public void setOutput(String outputString) {
+		// TODO Auto-generated method stub
+	}
 
-    @Override
-    public String getErrorText() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	@Override
+	public void setRequestProperty(String key, String value) {
+		// TODO Auto-generated method stub
 
-    @Override
-    public void setStreamOutput(InputStream stream) {
-        // TODO Auto-generated method stub
+	}
 
-    }
+	@Override
+	public String getErrorText() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    @Override
-    public String getHeaderField(String name) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	@Override
+	public void setStreamOutput(InputStream stream) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public String getHeaderField(String name) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
