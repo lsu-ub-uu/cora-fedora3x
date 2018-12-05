@@ -16,7 +16,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.reader.xml;
+package se.uu.ub.cora.fedora.reader;
 
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
 import se.uu.ub.cora.fedora.data.FedoraReaderCursor;
@@ -26,7 +26,7 @@ import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class FedoraReaderPureImp implements FedoraReaderPure {
+public class FedoraReaderImp implements FedoraReader {
 	private static final int OK = 200;
 	private static final int NOT_FOUND = 404;
 	private static final int DEFAULT_MAX_RESULTS = 100;
@@ -35,7 +35,7 @@ public class FedoraReaderPureImp implements FedoraReaderPure {
 	private String baseUrl;
 	private int maxResults;
 
-	public FedoraReaderPureImp(HttpHandlerFactory httpHandlerFactory,
+	public FedoraReaderImp(HttpHandlerFactory httpHandlerFactory,
 														 FedoraReaderXmlHelper fedoraReaderXmlHelper, String baseUrl) {
 		this.httpHandlerFactory = httpHandlerFactory;
 		this.fedoraReaderXmlHelper = fedoraReaderXmlHelper;

@@ -16,7 +16,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.reader.xml;
+package se.uu.ub.cora.fedora.reader;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -25,6 +25,9 @@ import se.uu.ub.cora.bookkeeper.data.DataGroup;
 import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelperSpy;
 import se.uu.ub.cora.fedora.data.HttpHandlerFactorySpy;
 import se.uu.ub.cora.fedora.data.HttpHandlerSpy;
+import se.uu.ub.cora.fedora.reader.FedoraReader;
+import se.uu.ub.cora.fedora.reader.FedoraReaderFactory;
+import se.uu.ub.cora.fedora.reader.FedoraReaderFactoryImp;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,7 +37,7 @@ import java.util.stream.Collectors;
 
 import static org.testng.Assert.*;
 
-public class FedoraReaderPureTest {
+public class FedoraReaderTest {
 	private static final String SOME_TOKEN = "someToken";
 	private static final String SOME_TYPE = "someType";
 	private static final String SOME_OBJECT_ID = "someObjectId";
@@ -48,7 +51,7 @@ public class FedoraReaderPureTest {
 			"%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*", SOME_BASE_URL,
 			DEFAULT_MAX_RESULTS, SOME_TYPE);
 	private static final DataGroup EMPTY_FILTER = DataGroup.withNameInData("filter");
-	private FedoraReaderPureFactory fedoraReaderPureFactory;
+	private FedoraReaderFactory fedoraReaderFactory;
 	private HttpHandlerFactorySpy httpHandlerFactorySpy;
 	private HttpHandlerSpy httpHandlerSpy;
 	private FedoraReaderXmlHelperSpy fedoraReaderXmlHelperSpy;
@@ -59,19 +62,19 @@ public class FedoraReaderPureTest {
 		httpHandlerFactorySpy = new HttpHandlerFactorySpy();
 		httpHandlerFactorySpy.httpHandlerSpy = httpHandlerSpy;
 		fedoraReaderXmlHelperSpy = new FedoraReaderXmlHelperSpy();
-		fedoraReaderPureFactory = new FedoraReaderPureFactoryImp(httpHandlerFactorySpy,
+		fedoraReaderFactory = new FedoraReaderFactoryImp(httpHandlerFactorySpy,
 				fedoraReaderXmlHelperSpy);
 	}
 
 	@Test
 	void testFactoringAReaderShouldYieldAReader() {
-		FedoraReaderPure fedoraReaderPure = fedoraReaderPureFactory.factor(SOME_BASE_URL);
-		assertNotNull(fedoraReaderPure);
+		FedoraReader fedoraReader = fedoraReaderFactory.factor(SOME_BASE_URL);
+		assertNotNull(fedoraReader);
 	}
 
 	@Test
 	public void testThatReadingAnObjectFactoredAnHttpHandlerWithCorrectUrl() {
-		FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		FedoraReader reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.readObject(SOME_OBJECT_ID);
 
 		assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 1);
@@ -84,7 +87,7 @@ public class FedoraReaderPureTest {
 	public void testReadingAnObjectShouldThrowNotFoundIfNotFound() {
 		httpHandlerSpy.urlCallResponseCode.push(404);
 
-		FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		FedoraReader reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.readObject(SOME_OBJECT_ID);
 	}
 
@@ -92,13 +95,13 @@ public class FedoraReaderPureTest {
 	public void testReadingAnObjectShouldThrowIfNotOk() {
 		httpHandlerSpy.urlCallResponseCode.push(418);
 
-		FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		FedoraReader reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.readObject(SOME_OBJECT_ID);
 	}
 
 	@Test
 	public void testReadingListWithDefaultMaxResults() {
-		FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		FedoraReader reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.readList(SOME_TYPE, EMPTY_FILTER);
 
 		assertEquals(httpHandlerFactorySpy.factoredHttpHandlers, 101);
@@ -108,14 +111,14 @@ public class FedoraReaderPureTest {
 	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "FedoraReader: Bad XML:.+")
 	public void testReadingListWithBadXML() {
 		fedoraReaderXmlHelperSpy.failPidExtraction = true;
-		FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		FedoraReader reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.readList(SOME_TYPE, EMPTY_FILTER);
 	}
 
 	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "FedoraReader: Bad XML:.+")
 	public void testReadingFromStartRowsListWithBadXML() {
 		fedoraReaderXmlHelperSpy.failPidExtraction = true;
-		FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		FedoraReader reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 
 		int rows = 1;
 		int start = 4;
@@ -129,7 +132,7 @@ public class FedoraReaderPureTest {
 	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Invalid XML")
 	public void testReadingRowsListWithBadXML() {
 		fedoraReaderXmlHelperSpy.failPidExtraction = true;
-		FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		FedoraReader reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 
 		int rows = 1;
 		var filter = DataGroup.withNameInData("filter");
@@ -143,7 +146,7 @@ public class FedoraReaderPureTest {
 		String expectedUrl = String.format(
 				"%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
 				SOME_BASE_URL, 123, SOME_TYPE);
-		FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		FedoraReader reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(123);
 		var results = reader.readList(SOME_TYPE, EMPTY_FILTER);
 
@@ -157,7 +160,7 @@ public class FedoraReaderPureTest {
 		var failingType = "someFailingType";
 		httpHandlerSpy.urlCallResponseCode.push(418);
 
-		FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		FedoraReader reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.readList(failingType, EMPTY_FILTER);
 	}
 
@@ -169,7 +172,7 @@ public class FedoraReaderPureTest {
 		var filter = DataGroup.withNameInData("filter");
 		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(42)));
 
-		FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		FedoraReader reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.readList(failingType, filter);
 	}
 
@@ -181,7 +184,7 @@ public class FedoraReaderPureTest {
 		var filter = DataGroup.withNameInData("filter");
 		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(42)));
 
-		FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		FedoraReader reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.readList(failingType, filter);
 	}
 
@@ -190,7 +193,7 @@ public class FedoraReaderPureTest {
 		var missingType = "someMissingType";
 		httpHandlerSpy.urlCallResponseCode.push(404);
 
-		FedoraReaderPure reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		FedoraReader reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.readList(missingType, EMPTY_FILTER);
 	}
 
@@ -204,7 +207,7 @@ public class FedoraReaderPureTest {
 		httpHandlerSpy.urlCallResponseCode.push(200);
 		httpHandlerSpy.urlCallResponseText.push(listUrl + " xml");
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(42);
 
 		var result = reader.readList(SOME_TYPE, EMPTY_FILTER);
@@ -240,7 +243,7 @@ public class FedoraReaderPureTest {
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 		createPagedHttpHandlersForReadList(pidList, 3);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(3);
 
 		var result = reader.readList(SOME_TYPE, EMPTY_FILTER);
@@ -262,7 +265,7 @@ public class FedoraReaderPureTest {
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 		createPagedHttpHandlersForReadList(pidList, 3);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(3);
 
 		var result = reader.readList(SOME_TYPE, EMPTY_FILTER);
@@ -284,7 +287,7 @@ public class FedoraReaderPureTest {
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 		var listUrl = expectedListUrl(SOME_TYPE, 42);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(42);
 
 		int start = 2;
@@ -307,8 +310,8 @@ public class FedoraReaderPureTest {
 	private String expectedListUrlWithCursor(int maxResults) {
 		return String.format(
 				"%s/objects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
-				SOME_BASE_URL, FedoraReaderPureTest.SOME_TOKEN, maxResults,
-				FedoraReaderPureTest.SOME_TYPE);
+				SOME_BASE_URL, FedoraReaderTest.SOME_TOKEN, maxResults,
+				FedoraReaderTest.SOME_TYPE);
 	}
 
 	@Test
@@ -318,7 +321,7 @@ public class FedoraReaderPureTest {
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 		createPagedHttpHandlersForReadList(pidList, 3);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(3);
 
 		int start = 2;
@@ -343,7 +346,7 @@ public class FedoraReaderPureTest {
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 		createPagedHttpHandlersForReadList(pidList, 3);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(3);
 
 		int start = 2;
@@ -369,7 +372,7 @@ public class FedoraReaderPureTest {
 
 		var listUrl = expectedListUrl(SOME_TYPE, 42);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(42);
 
 		int start = 3;
@@ -392,7 +395,7 @@ public class FedoraReaderPureTest {
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 		createPagedHttpHandlersForReadList(pidList, 3);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(3);
 
 		int start = 3;
@@ -417,7 +420,7 @@ public class FedoraReaderPureTest {
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 		createPagedHttpHandlersForReadList(pidList, 3);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(3);
 
 		int start = 3;
@@ -451,7 +454,7 @@ public class FedoraReaderPureTest {
 		httpHandlerSpy.addQueryResponse(listUrl, callCountResponse, responseCodes, 1);
 		fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, false, pidList);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(42);
 
 		int rows = 4;
@@ -488,7 +491,7 @@ public class FedoraReaderPureTest {
 					- 1;
 
 			httpHandlerSpy.addQueryResponse(
-					expectedListUrl(FedoraReaderPureTest.SOME_TYPE, maxResults),
+					expectedListUrl(FedoraReaderTest.SOME_TYPE, maxResults),
 					Map.of(0, SOME_TYPE_REQUEST_XML_RESPONSE), Map.of(0, 200), 1);
 
 			fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, true,
@@ -520,7 +523,7 @@ public class FedoraReaderPureTest {
 	}
 
 	private void createResponsesForPage(List<String> pidList, int maxResults) {
-		String typeQuery = expectedListUrl(FedoraReaderPureTest.SOME_TYPE, maxResults);
+		String typeQuery = expectedListUrl(FedoraReaderTest.SOME_TYPE, maxResults);
 
 		Map<Integer, String> callCountResponse = new HashMap<>();
 		Map<Integer, Integer> responseCodes = new HashMap<>();
@@ -567,7 +570,7 @@ public class FedoraReaderPureTest {
 		httpHandlerSpy.addQueryResponse(listUrl, callCountResponse, responseCodes, 1);
 		fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, false, pidList);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(42);
 
 		int rows = 7;
@@ -590,7 +593,7 @@ public class FedoraReaderPureTest {
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 		createPagedHttpHandlersForReadList(pidList, 3);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(3);
 
 		int rows = 4;
@@ -615,7 +618,7 @@ public class FedoraReaderPureTest {
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 		createPagedHttpHandlersForReadList(pidList, 3);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(3);
 
 		int rows = 6;
@@ -649,7 +652,7 @@ public class FedoraReaderPureTest {
 		httpHandlerSpy.addQueryResponse(listUrl, callCountResponse, responseCodes, 1);
 		fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, false, pidList);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(42);
 
 		int rows = 5;
@@ -671,7 +674,7 @@ public class FedoraReaderPureTest {
 
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(3);
 
 		int rows = 3;
@@ -694,7 +697,7 @@ public class FedoraReaderPureTest {
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 		createPagedHttpHandlersForReadList(pidList, 3);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(3);
 
 		int rows = 7;
@@ -718,7 +721,7 @@ public class FedoraReaderPureTest {
 
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(42);
 
 		int rows = 3;
@@ -745,7 +748,7 @@ public class FedoraReaderPureTest {
 
 		var listUrl = expectedListUrl(SOME_TYPE, 42);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(42);
 
 		int rows = 7;
@@ -770,7 +773,7 @@ public class FedoraReaderPureTest {
 
 		createPagedHttpHandlersForReadList(pidList, 3);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(3);
 
 		var listUrl = expectedListUrl(SOME_TYPE, 3);
@@ -799,7 +802,7 @@ public class FedoraReaderPureTest {
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 		createPagedHttpHandlersForReadList(pidList, 3);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(3);
 
 		int rows = 6;
@@ -836,7 +839,7 @@ public class FedoraReaderPureTest {
 		httpHandlerSpy.addQueryResponse(listUrl, callCountResponse, responseCodes, 1);
 		fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, false, pidList);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(42);
 
 		int rows = 1;
@@ -862,7 +865,7 @@ public class FedoraReaderPureTest {
 
 		var listUrl = expectedListUrl(SOME_TYPE, 42);
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(42);
 
 		int rows = 7;
@@ -886,7 +889,7 @@ public class FedoraReaderPureTest {
 
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(3);
 
 		var listUrl = expectedListUrl(SOME_TYPE, 4);
@@ -914,7 +917,7 @@ public class FedoraReaderPureTest {
 		fedoraReaderXmlHelperSpy.hardLimitOnMaxResults = 2;
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(3);
 
 		var listUrl = expectedListUrl(SOME_TYPE, 5);
@@ -941,7 +944,7 @@ public class FedoraReaderPureTest {
 
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 		reader.setMaxResults(3);
 
 		int rows = 5;
@@ -963,7 +966,7 @@ public class FedoraReaderPureTest {
 
 	@Test
 	public void testAskingForZeroRowsShouldYieldEmptyResponse() {
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 
 		var filter = DataGroup.withNameInData("filter");
 		filter.addChild(DataAtomic.withNameInDataAndValue("rows", "0"));
@@ -975,7 +978,7 @@ public class FedoraReaderPureTest {
 
 	@Test
 	public void testAskingForOneRowShouldYieldOneRow() {
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 
 		var filter = DataGroup.withNameInData("filter");
 		filter.addChild(DataAtomic.withNameInDataAndValue("rows", "1"));
@@ -988,7 +991,7 @@ public class FedoraReaderPureTest {
 	@Test
 	public void testAskingForSomethingAfterTheEndOfThePidListShouldYieldAnEmptyList() {
 		fedoraReaderXmlHelperSpy.pidList = List.of();
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 
 		var filter = DataGroup.withNameInData("filter");
 		filter.addChild(DataAtomic.withNameInDataAndValue("start", "1"));
@@ -1000,7 +1003,7 @@ public class FedoraReaderPureTest {
 
 	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Invalid start value \\(-12\\)")
 	public void testPagingFromBrokenStartLimitedByRowsWithThreePages() {
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 
 		int rows = 5;
 		int start = -12;
@@ -1012,7 +1015,7 @@ public class FedoraReaderPureTest {
 
 	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Invalid row count \\(-1\\)")
 	public void testPagingFromStartLimitedByBrokenRowsWithStartThreePages() {
-		var reader = fedoraReaderPureFactory.factor(SOME_BASE_URL);
+		var reader = fedoraReaderFactory.factor(SOME_BASE_URL);
 
 		int rows = -1;
 		var filter = DataGroup.withNameInData("filter");

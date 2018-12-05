@@ -16,23 +16,8 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.reader.xml;
+package se.uu.ub.cora.fedora.reader;
 
-import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelper;
-import se.uu.ub.cora.httphandler.HttpHandlerFactory;
-
-public class FedoraReaderPureFactoryImp implements FedoraReaderPureFactory {
-	private HttpHandlerFactory httpHandlerFactory;
-	private FedoraReaderXmlHelper fedoraReaderXmlHelper;
-
-	public FedoraReaderPureFactoryImp(HttpHandlerFactory httpHandlerFactory,
-																		FedoraReaderXmlHelper fedoraReaderXmlHelper) {
-		this.httpHandlerFactory = httpHandlerFactory;
-		this.fedoraReaderXmlHelper = fedoraReaderXmlHelper;
-	}
-
-	@Override
-	public FedoraReaderPure factor(String baseUrl) {
-		return new FedoraReaderPureImp(httpHandlerFactory, fedoraReaderXmlHelper, baseUrl);
-	}
+public interface FedoraReaderFactory {
+	FedoraReader factor(String baseUrl);
 }

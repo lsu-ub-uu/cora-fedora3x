@@ -16,30 +16,23 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.data;
+package se.uu.ub.cora.fedora.reader;
 
-import java.util.List;
+import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelper;
+import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
-public class FedoraReaderPidListWithOptionalCursor {
+public class FedoraReaderFactoryImp implements FedoraReaderFactory {
+	private HttpHandlerFactory httpHandlerFactory;
+	private FedoraReaderXmlHelper fedoraReaderXmlHelper;
 
-	private final List<String> pidList;
-	private final FedoraReaderCursor cursor;
-
-	public FedoraReaderPidListWithOptionalCursor(List<String> pidList, FedoraReaderCursor cursor) {
-		this.pidList = pidList;
-		this.cursor = cursor;
+	public FedoraReaderFactoryImp(HttpHandlerFactory httpHandlerFactory,
+																		FedoraReaderXmlHelper fedoraReaderXmlHelper) {
+		this.httpHandlerFactory = httpHandlerFactory;
+		this.fedoraReaderXmlHelper = fedoraReaderXmlHelper;
 	}
 
-	public FedoraReaderPidListWithOptionalCursor(List<String> pidList) {
-		this.pidList = pidList;
-		this.cursor = null;
-	}
-
-	public List<String> getPidList() {
-		return pidList;
-	}
-
-	public FedoraReaderCursor getCursor() {
-		return cursor;
+	@Override
+	public FedoraReader factor(String baseUrl) {
+		return new FedoraReaderImp(httpHandlerFactory, fedoraReaderXmlHelper, baseUrl);
 	}
 }

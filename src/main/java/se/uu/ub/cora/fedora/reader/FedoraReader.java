@@ -18,12 +18,14 @@
  */
 package se.uu.ub.cora.fedora.reader;
 
-import se.uu.ub.cora.bookkeeper.data.DataElement;
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
-import se.uu.ub.cora.spider.data.SpiderReadResult;
+
+import java.util.List;
 
 public interface FedoraReader {
-	DataElement read(String type, String id);
+	String readObject(String objectId);
 
-	SpiderReadResult readList(String type, DataGroup filter);
+	List<String> readList(String type, DataGroup filter);
+
+	void setMaxResults(int count);
 }
