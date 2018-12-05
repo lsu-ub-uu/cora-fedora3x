@@ -43,9 +43,6 @@ public final class XMLXPathParserImp implements XMLXPathParser {
 	private Document document;
 	private XPath xpath;
 
-	public XMLXPathParserImp() {
-	}
-
 	@Override
 	public XMLXPathParser forXML(String xml) throws XMLXPathParserException {
 		try {
