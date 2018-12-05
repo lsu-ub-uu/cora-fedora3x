@@ -93,13 +93,13 @@ public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
 	}
 
 	@Override
-	public void setXmlXPathParseFactory(XMLXPathParserFactory xmlXPathParserFactory) {
-
+	public XMLXPathParserFactory getXmlXPathParseFactory() {
+		return null;
 	}
 
 	@Override
-	public XMLXPathParserFactory getXmlXPathParseFactory() {
-		return null;
+	public void setXmlXPathParseFactory(XMLXPathParserFactory xmlXPathParserFactory) {
+
 	}
 
 }

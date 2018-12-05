@@ -25,7 +25,7 @@ public interface FedoraReaderXmlHelper {
 
 	List<String> getPidList(String xml);
 
-	void setXmlXPathParseFactory(XMLXPathParserFactory xmlXPathParserFactory);
-
 	XMLXPathParserFactory getXmlXPathParseFactory();
+
+	void setXmlXPathParseFactory(XMLXPathParserFactory xmlXPathParserFactory);
 }

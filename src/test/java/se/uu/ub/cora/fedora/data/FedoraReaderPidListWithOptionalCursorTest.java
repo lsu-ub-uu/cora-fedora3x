@@ -18,13 +18,13 @@
  */
 package se.uu.ub.cora.fedora.data;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
+import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 public class FedoraReaderPidListWithOptionalCursorTest {
 	@Test

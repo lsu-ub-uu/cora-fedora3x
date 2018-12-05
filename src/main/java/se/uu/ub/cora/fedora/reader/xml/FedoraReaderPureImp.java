@@ -18,13 +18,13 @@
  */
 package se.uu.ub.cora.fedora.reader.xml;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
 import se.uu.ub.cora.fedora.data.FedoraReaderCursor;
 import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelper;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class FedoraReaderPureImp implements FedoraReaderPure {
 	private static final int OK = 200;
@@ -36,7 +36,7 @@ public class FedoraReaderPureImp implements FedoraReaderPure {
 	private int maxResults;
 
 	public FedoraReaderPureImp(HttpHandlerFactory httpHandlerFactory,
-			FedoraReaderXmlHelper fedoraReaderXmlHelper, String baseUrl) {
+														 FedoraReaderXmlHelper fedoraReaderXmlHelper, String baseUrl) {
 		this.httpHandlerFactory = httpHandlerFactory;
 		this.fedoraReaderXmlHelper = fedoraReaderXmlHelper;
 		this.baseUrl = baseUrl;
@@ -205,7 +205,7 @@ public class FedoraReaderPureImp implements FedoraReaderPure {
 	}
 
 	private List<String> possiblyGetRequestedObjectsFromFedoraLimitedByRows(String type, int rows,
-			String responseXML) {
+																																					String responseXML) {
 		var pidList = fedoraReaderXmlHelper.getPidList(responseXML);
 		List<String> result = possiblyGetObjectsFromFedoraLimitByRows(rows, pidList);
 
@@ -225,7 +225,7 @@ public class FedoraReaderPureImp implements FedoraReaderPure {
 	}
 
 	private List<String> possiblyReadMoreObjectsFromFedoraLimitByRows(String type, int rows,
-			String responseXML) {
+																																		String responseXML) {
 		var cursor = fedoraReaderXmlHelper.getCursorIfAvailable(responseXML);
 		if (cursor != null) {
 			String nextPageInCursor = getFedoraCursorUrlForType(type, maxResults, cursor);
@@ -245,7 +245,7 @@ public class FedoraReaderPureImp implements FedoraReaderPure {
 	}
 
 	private String getFedoraCursorUrlForType(String type, int maxResults,
-			FedoraReaderCursor cursor) {
+																					 FedoraReaderCursor cursor) {
 		return String.format(
 				"%s/objects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
 				baseUrl, cursor.getToken(), maxResults, type);

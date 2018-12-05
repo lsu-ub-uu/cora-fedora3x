@@ -18,9 +18,9 @@
  */
 package se.uu.ub.cora.fedora.reader.xml;
 
-import java.util.List;
-
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
+
+import java.util.List;
 
 public interface FedoraReaderPure {
 	String readObject(String objectId);

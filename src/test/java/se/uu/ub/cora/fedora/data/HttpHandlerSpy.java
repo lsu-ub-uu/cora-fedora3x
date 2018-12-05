@@ -18,11 +18,11 @@
  */
 package se.uu.ub.cora.fedora.data;
 
+import se.uu.ub.cora.httphandler.HttpHandler;
+
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Stack;
-
-import se.uu.ub.cora.httphandler.HttpHandler;
 
 public class HttpHandlerSpy implements HttpHandler {
 	public Stack<String> urlCall = new Stack<>();

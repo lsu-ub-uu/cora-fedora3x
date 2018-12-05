@@ -26,7 +26,7 @@ public class FedoraReaderPureFactoryImp implements FedoraReaderPureFactory {
 	private FedoraReaderXmlHelper fedoraReaderXmlHelper;
 
 	public FedoraReaderPureFactoryImp(HttpHandlerFactory httpHandlerFactory,
-			FedoraReaderXmlHelper fedoraReaderXmlHelper) {
+																		FedoraReaderXmlHelper fedoraReaderXmlHelper) {
 		this.httpHandlerFactory = httpHandlerFactory;
 		this.fedoraReaderXmlHelper = fedoraReaderXmlHelper;
 	}

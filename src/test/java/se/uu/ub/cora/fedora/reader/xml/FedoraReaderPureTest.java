@@ -18,9 +18,13 @@
  */
 package se.uu.ub.cora.fedora.reader.xml;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+import se.uu.ub.cora.bookkeeper.data.DataAtomic;
+import se.uu.ub.cora.bookkeeper.data.DataGroup;
+import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelperSpy;
+import se.uu.ub.cora.fedora.data.HttpHandlerFactorySpy;
+import se.uu.ub.cora.fedora.data.HttpHandlerSpy;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,30 +32,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import se.uu.ub.cora.bookkeeper.data.DataAtomic;
-import se.uu.ub.cora.bookkeeper.data.DataGroup;
-import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelperSpy;
-import se.uu.ub.cora.fedora.data.HttpHandlerFactorySpy;
-import se.uu.ub.cora.fedora.data.HttpHandlerSpy;
+import static org.testng.Assert.*;
 
 public class FedoraReaderPureTest {
 	private static final String SOME_TOKEN = "someToken";
-	private FedoraReaderPureFactory fedoraReaderPureFactory;
-
-	private HttpHandlerFactorySpy httpHandlerFactorySpy;
-	private HttpHandlerSpy httpHandlerSpy;
-	private FedoraReaderXmlHelperSpy fedoraReaderXmlHelperSpy;
-
 	private static final String SOME_TYPE = "someType";
 	private static final String SOME_OBJECT_ID = "someObjectId";
-
 	private static final int DEFAULT_MAX_RESULTS = 100;
-
 	private static final String SOME_BASE_URL = "someBaseUrl";
-
 	private static final String SOME_TYPE_REQUEST_XML_RESPONSE = "someXmlTypeResponse:";
 	private static final String SOME_PID_REQUEST_XML_RESPONSE = "someXmlPidResponse:";
 	private static final String EXPECTED_OBJECT_URL = String
@@ -59,8 +47,11 @@ public class FedoraReaderPureTest {
 	private static final String EXPECTED_LIST_URL = String.format(
 			"%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*", SOME_BASE_URL,
 			DEFAULT_MAX_RESULTS, SOME_TYPE);
-
 	private static final DataGroup EMPTY_FILTER = DataGroup.withNameInData("filter");
+	private FedoraReaderPureFactory fedoraReaderPureFactory;
+	private HttpHandlerFactorySpy httpHandlerFactorySpy;
+	private HttpHandlerSpy httpHandlerSpy;
+	private FedoraReaderXmlHelperSpy fedoraReaderXmlHelperSpy;
 
 	@BeforeMethod
 	void init() {
@@ -225,6 +216,23 @@ public class FedoraReaderPureTest {
 		assertEquals(result, pidResponseList);
 	}
 
+	private List<String> getExpectedResponse(List<String> pidList) {
+
+		return pidList.stream()
+				.map(pid -> String.format(
+						"someBaseUrl/objects/%s/datastreams/METADATA/content xml response", pid))
+				.collect(Collectors.toList());
+	}
+
+	private List<String> getSomePidList(Integer... integers) {
+		return Arrays.stream(integers).map(this::pidNameFromNumber).collect(Collectors.toList());
+	}
+
+	private String expectedListUrl(String type, int maxResults) {
+		return String.format("%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
+				SOME_BASE_URL, maxResults, type);
+	}
+
 	@Test
 	public void testPagingWithTwoPages() {
 		var pidList = getSomePidList(1, 2, 3, 4, 5);
@@ -294,6 +302,13 @@ public class FedoraReaderPureTest {
 
 		var pidResponseList = getExpectedResponse(pidList.subList(start, pidList.size()));
 		assertEquals(result, pidResponseList);
+	}
+
+	private String expectedListUrlWithCursor(int maxResults) {
+		return String.format(
+				"%s/objects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
+				SOME_BASE_URL, FedoraReaderPureTest.SOME_TOKEN, maxResults,
+				FedoraReaderPureTest.SOME_TYPE);
 	}
 
 	@Test
@@ -450,6 +465,90 @@ public class FedoraReaderPureTest {
 
 		var pidResponseList = getExpectedResponse(pidList.subList(0, rows));
 		assertEquals(result, pidResponseList);
+	}
+
+	private void createPagedHttpHandlersForReadList(List<String> pidList, int maxResults) {
+		createPagedHttpHandlersForReadList(pidList,
+				pidList.stream().map(itm -> 1).collect(Collectors.toList()), maxResults,
+				maxResults);
+	}
+
+	private void createPagedHttpHandlersForReadList(List<String> pidList,
+																									List<Integer> pidAccessCountList, int pageSize, int maxResults) {
+		assert (pidList.size() == pidAccessCountList.size());
+		for (int idx = 0; idx < pidList.size(); idx++) {
+			createHandlerForPid(pidList.get(idx), pidAccessCountList.get(idx));
+		}
+
+		if (pidList.size() <= pageSize) {
+			createResponsesForPage(pidList, maxResults);
+		} else {
+
+			var expectedNumberOfCalls = (int) Math.ceil((float) pidList.size() / (float) pageSize)
+					- 1;
+
+			httpHandlerSpy.addQueryResponse(
+					expectedListUrl(FedoraReaderPureTest.SOME_TYPE, maxResults),
+					Map.of(0, SOME_TYPE_REQUEST_XML_RESPONSE), Map.of(0, 200), 1);
+
+			fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, true,
+					pidList.subList(0, pageSize));
+
+			int idx = expectedNumberOfCalls - 1;
+
+			var callCountResponse = new HashMap<Integer, String>();
+			var responseCodes = new HashMap<Integer, Integer>();
+
+			for (; idx > 0; idx--) {
+				responseCodes.put(idx, 200);
+				callCountResponse.put(idx, SOME_TYPE_REQUEST_XML_RESPONSE + idx);
+				fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE + idx,
+						true, pidList.subList(pageSize * (expectedNumberOfCalls - idx),
+								pageSize * (expectedNumberOfCalls + 1 - idx)));
+			}
+
+			responseCodes.put(0, 200);
+			callCountResponse.put(0, SOME_TYPE_REQUEST_XML_RESPONSE + 0);
+			fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE + 0, false,
+					pidList.subList(pageSize * expectedNumberOfCalls, pidList.size()));
+
+			var listCursorUrl = expectedListUrlWithCursor();
+
+			httpHandlerSpy.addQueryResponse(listCursorUrl, callCountResponse, responseCodes,
+					expectedNumberOfCalls);
+		}
+	}
+
+	private void createResponsesForPage(List<String> pidList, int maxResults) {
+		String typeQuery = expectedListUrl(FedoraReaderPureTest.SOME_TYPE, maxResults);
+
+		Map<Integer, String> callCountResponse = new HashMap<>();
+		Map<Integer, Integer> responseCodes = new HashMap<>();
+		callCountResponse.put(0, SOME_TYPE_REQUEST_XML_RESPONSE);
+		responseCodes.put(0, 200);
+		httpHandlerSpy.addQueryResponse(typeQuery, callCountResponse, responseCodes, 1);
+		fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, false, pidList);
+	}
+
+	private void createHandlerForPid(String pid, int accessCount) {
+		Map<Integer, String> callCountResponse = new HashMap<>();
+		Map<Integer, Integer> responseCodes = new HashMap<>();
+		for (int i = 0; i < accessCount; i++) {
+			callCountResponse.put(i, SOME_PID_REQUEST_XML_RESPONSE + pid);
+			responseCodes.put(i, 200);
+		}
+
+		String expectedObjectUrl = expectedObjectUrl(pid);
+		httpHandlerSpy.addQueryResponse(expectedObjectUrl, callCountResponse, responseCodes,
+				accessCount);
+	}
+
+	private String expectedObjectUrl(String pid) {
+		return String.format("%s/objects/%s/datastreams/METADATA/content", SOME_BASE_URL, pid);
+	}
+
+	private String expectedListUrlWithCursor() {
+		return expectedListUrlWithCursor(3);
 	}
 
 	@Test
@@ -921,115 +1020,7 @@ public class FedoraReaderPureTest {
 		reader.readList(SOME_TYPE, filter);
 	}
 
-	private List<String> getExpectedResponse(List<String> pidList) {
-
-		return pidList.stream()
-				.map(pid -> String.format(
-						"someBaseUrl/objects/%s/datastreams/METADATA/content xml response", pid))
-				.collect(Collectors.toList());
-	}
-
-	private List<String> getSomePidList(Integer... integers) {
-		return Arrays.stream(integers).map(this::pidNameFromNumber).collect(Collectors.toList());
-	}
-
 	private String pidNameFromNumber(int number) {
 		return String.format("somePid:%05d", number);
-	}
-
-	private void createPagedHttpHandlersForReadList(List<String> pidList, int maxResults) {
-		createPagedHttpHandlersForReadList(pidList,
-				pidList.stream().map(itm -> 1).collect(Collectors.toList()), maxResults,
-				maxResults);
-	}
-
-	private void createPagedHttpHandlersForReadList(List<String> pidList,
-			List<Integer> pidAccessCountList, int pageSize, int maxResults) {
-		assert (pidList.size() == pidAccessCountList.size());
-		for (int idx = 0; idx < pidList.size(); idx++) {
-			createHandlerForPid(pidList.get(idx), pidAccessCountList.get(idx));
-		}
-
-		if (pidList.size() <= pageSize) {
-			createResponsesForPage(pidList, maxResults);
-		} else {
-
-			var expectedNumberOfCalls = (int) Math.ceil((float) pidList.size() / (float) pageSize)
-					- 1;
-
-			httpHandlerSpy.addQueryResponse(
-					expectedListUrl(FedoraReaderPureTest.SOME_TYPE, maxResults),
-					Map.of(0, SOME_TYPE_REQUEST_XML_RESPONSE), Map.of(0, 200), 1);
-
-			fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, true,
-					pidList.subList(0, pageSize));
-
-			int idx = expectedNumberOfCalls - 1;
-
-			var callCountResponse = new HashMap<Integer, String>();
-			var responseCodes = new HashMap<Integer, Integer>();
-
-			for (; idx > 0; idx--) {
-				responseCodes.put(idx, 200);
-				callCountResponse.put(idx, SOME_TYPE_REQUEST_XML_RESPONSE + idx);
-				fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE + idx,
-						true, pidList.subList(pageSize * (expectedNumberOfCalls - idx),
-								pageSize * (expectedNumberOfCalls + 1 - idx)));
-			}
-
-			responseCodes.put(0, 200);
-			callCountResponse.put(0, SOME_TYPE_REQUEST_XML_RESPONSE + 0);
-			fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE + 0, false,
-					pidList.subList(pageSize * expectedNumberOfCalls, pidList.size()));
-
-			var listCursorUrl = expectedListUrlWithCursor();
-
-			httpHandlerSpy.addQueryResponse(listCursorUrl, callCountResponse, responseCodes,
-					expectedNumberOfCalls);
-		}
-	}
-
-	private void createResponsesForPage(List<String> pidList, int maxResults) {
-		String typeQuery = expectedListUrl(FedoraReaderPureTest.SOME_TYPE, maxResults);
-
-		Map<Integer, String> callCountResponse = new HashMap<>();
-		Map<Integer, Integer> responseCodes = new HashMap<>();
-		callCountResponse.put(0, SOME_TYPE_REQUEST_XML_RESPONSE);
-		responseCodes.put(0, 200);
-		httpHandlerSpy.addQueryResponse(typeQuery, callCountResponse, responseCodes, 1);
-		fedoraReaderXmlHelperSpy.addPidListForXml(SOME_TYPE_REQUEST_XML_RESPONSE, false, pidList);
-	}
-
-	private void createHandlerForPid(String pid, int accessCount) {
-		Map<Integer, String> callCountResponse = new HashMap<>();
-		Map<Integer, Integer> responseCodes = new HashMap<>();
-		for (int i = 0; i < accessCount; i++) {
-			callCountResponse.put(i, SOME_PID_REQUEST_XML_RESPONSE + pid);
-			responseCodes.put(i, 200);
-		}
-
-		String expectedObjectUrl = expectedObjectUrl(pid);
-		httpHandlerSpy.addQueryResponse(expectedObjectUrl, callCountResponse, responseCodes,
-				accessCount);
-	}
-
-	private String expectedObjectUrl(String pid) {
-		return String.format("%s/objects/%s/datastreams/METADATA/content", SOME_BASE_URL, pid);
-	}
-
-	private String expectedListUrl(String type, int maxResults) {
-		return String.format("%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
-				SOME_BASE_URL, maxResults, type);
-	}
-
-	private String expectedListUrlWithCursor() {
-		return expectedListUrlWithCursor(3);
-	}
-
-	private String expectedListUrlWithCursor(int maxResults) {
-		return String.format(
-				"%s/objects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
-				SOME_BASE_URL, FedoraReaderPureTest.SOME_TOKEN, maxResults,
-				FedoraReaderPureTest.SOME_TYPE);
 	}
 }

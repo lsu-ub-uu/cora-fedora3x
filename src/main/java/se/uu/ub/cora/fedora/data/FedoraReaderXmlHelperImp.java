@@ -18,10 +18,10 @@
  */
 package se.uu.ub.cora.fedora.data;
 
+import org.w3c.dom.NodeList;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import org.w3c.dom.NodeList;
 
 public class FedoraReaderXmlHelperImp implements FedoraReaderXmlHelper {
 	private XMLXPathParserFactory xmlXPathParserFactory;
@@ -34,50 +34,6 @@ public class FedoraReaderXmlHelperImp implements FedoraReaderXmlHelper {
 		} catch (XMLXPathParserException e) {
 			throw new RuntimeException("malformed cursor", e);
 		}
-	}
-
-	@Override
-	public List<String> getPidList(String xml) {
-		try {
-			var xmlXPathParsers = xmlXPathParserFactory.factor().forXML(xml);
-			return extractPidList(xmlXPathParsers);
-		} catch (XMLXPathParserException e) {
-			throw new RuntimeException("There was no resultList in given XML", e);
-		}
-	}
-
-	@Override
-	public void setXmlXPathParseFactory(XMLXPathParserFactory xmlXPathParserFactory) {
-		this.xmlXPathParserFactory = xmlXPathParserFactory;
-	}
-
-	@Override
-	public XMLXPathParserFactory getXmlXPathParseFactory() {
-		return xmlXPathParserFactory;
-	}
-
-	private static List<String> extractPidList(XMLXPathParser xmlxPathParser)
-			throws XMLXPathParserException {
-		throwIfResultListIsMissing(xmlxPathParser);
-		var nodeList = xmlxPathParser
-				.getNodeListFromDocumentUsingXPath("/result/resultList/objectFields/pid/text()");
-		return getPidListFromNodeList(nodeList);
-	}
-
-	private static void throwIfResultListIsMissing(XMLXPathParser xmlxPathParser)
-			throws XMLXPathParserException {
-		if (!xmlxPathParser.hasNode("/result/resultList")) {
-			throw new XMLXPathParserException("There was no resultList in given XML");
-		}
-	}
-
-	private static List<String> getPidListFromNodeList(NodeList nodeList) {
-		var result = new ArrayList<String>();
-		for (int idx = 0; idx < nodeList.getLength(); idx++) {
-			var node = nodeList.item(idx);
-			result.add(node.getNodeValue());
-		}
-		return result;
 	}
 
 	private static FedoraReaderCursor extractCursor(XMLXPathParser xmlxPathParser)
@@ -118,5 +74,49 @@ public class FedoraReaderXmlHelperImp implements FedoraReaderXmlHelper {
 				.getStringFromDocumentUsingXPath("/result/listSession/cursor/text()");
 		throwIfRequiredElementNotFound(cursor, "cursor not found in XML");
 		return cursor;
+	}
+
+	@Override
+	public List<String> getPidList(String xml) {
+		try {
+			var xmlXPathParsers = xmlXPathParserFactory.factor().forXML(xml);
+			return extractPidList(xmlXPathParsers);
+		} catch (XMLXPathParserException e) {
+			throw new RuntimeException("There was no resultList in given XML", e);
+		}
+	}
+
+	private static List<String> extractPidList(XMLXPathParser xmlxPathParser)
+			throws XMLXPathParserException {
+		throwIfResultListIsMissing(xmlxPathParser);
+		var nodeList = xmlxPathParser
+				.getNodeListFromDocumentUsingXPath("/result/resultList/objectFields/pid/text()");
+		return getPidListFromNodeList(nodeList);
+	}
+
+	private static void throwIfResultListIsMissing(XMLXPathParser xmlxPathParser)
+			throws XMLXPathParserException {
+		if (!xmlxPathParser.hasNode("/result/resultList")) {
+			throw new XMLXPathParserException("There was no resultList in given XML");
+		}
+	}
+
+	private static List<String> getPidListFromNodeList(NodeList nodeList) {
+		var result = new ArrayList<String>();
+		for (int idx = 0; idx < nodeList.getLength(); idx++) {
+			var node = nodeList.item(idx);
+			result.add(node.getNodeValue());
+		}
+		return result;
+	}
+
+	@Override
+	public XMLXPathParserFactory getXmlXPathParseFactory() {
+		return xmlXPathParserFactory;
+	}
+
+	@Override
+	public void setXmlXPathParseFactory(XMLXPathParserFactory xmlXPathParserFactory) {
+		this.xmlXPathParserFactory = xmlXPathParserFactory;
 	}
 }

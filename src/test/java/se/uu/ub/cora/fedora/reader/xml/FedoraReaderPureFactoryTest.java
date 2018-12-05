@@ -18,15 +18,14 @@
  */
 package se.uu.ub.cora.fedora.reader.xml;
 
-import static org.testng.Assert.assertNotNull;
-
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
 import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelper;
 import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelperSpy;
 import se.uu.ub.cora.fedora.data.HttpHandlerFactorySpy;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
+
+import static org.testng.Assert.assertNotNull;
 
 public class FedoraReaderPureFactoryTest {
 

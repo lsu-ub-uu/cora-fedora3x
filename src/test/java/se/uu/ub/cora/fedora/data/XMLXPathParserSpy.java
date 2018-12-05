@@ -18,24 +18,24 @@
  */
 package se.uu.ub.cora.fedora.data;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class XMLXPathParserSpy implements XMLXPathParser {
 	public Map<String, Boolean> validXml;
 	public Map<String, Integer> callCount;
 	private String lastParsedXml;
 
-	public int getCallCount(String xml) {
-		return callCount.get(xml);
-	}
-
 	public XMLXPathParserSpy() {
 		validXml = new HashMap<>();
 		callCount = new HashMap<>();
+	}
+
+	public int getCallCount(String xml) {
+		return callCount.get(xml);
 	}
 
 	public void addXml(String xml) {
