@@ -18,29 +18,34 @@
  */
 package se.uu.ub.cora.fedora.reader;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import se.uu.ub.cora.bookkeeper.data.DataGroup;
 import se.uu.ub.cora.fedora.data.FedoraReaderCursor;
 import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelper;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 public class FedoraReaderImp implements FedoraReader {
 	private static final int OK = 200;
 	private static final int NOT_FOUND = 404;
 	private static final int DEFAULT_MAX_RESULTS = 100;
-	private HttpHandlerFactory httpHandlerFactory;
-	private FedoraReaderXmlHelper fedoraReaderXmlHelper;
-	private String baseUrl;
-	private int maxResults;
+	private final HttpHandlerFactory httpHandlerFactory;
+	private final FedoraReaderXmlHelper fedoraReaderXmlHelper;
+	private final String baseUrl;
+	private int maxResults = DEFAULT_MAX_RESULTS;
 
-	public FedoraReaderImp(HttpHandlerFactory httpHandlerFactory,
-														 FedoraReaderXmlHelper fedoraReaderXmlHelper, String baseUrl) {
+	public static FedoraReaderImp usingHttpHandlerFactoryAndFedoraReaderXmlHelperAndBaseUrl(
+			HttpHandlerFactory httpHandlerFactory, FedoraReaderXmlHelper fedoraReaderXmlHelper,
+			String baseUrl) {
+		return new FedoraReaderImp(httpHandlerFactory, fedoraReaderXmlHelper, baseUrl);
+	}
+
+	private FedoraReaderImp(HttpHandlerFactory httpHandlerFactory,
+			FedoraReaderXmlHelper fedoraReaderXmlHelper, String baseUrl) {
 		this.httpHandlerFactory = httpHandlerFactory;
 		this.fedoraReaderXmlHelper = fedoraReaderXmlHelper;
 		this.baseUrl = baseUrl;
-		this.maxResults = DEFAULT_MAX_RESULTS;
 	}
 
 	@Override
@@ -205,7 +210,7 @@ public class FedoraReaderImp implements FedoraReader {
 	}
 
 	private List<String> possiblyGetRequestedObjectsFromFedoraLimitedByRows(String type, int rows,
-																																					String responseXML) {
+			String responseXML) {
 		var pidList = fedoraReaderXmlHelper.getPidList(responseXML);
 		List<String> result = possiblyGetObjectsFromFedoraLimitByRows(rows, pidList);
 
@@ -225,7 +230,7 @@ public class FedoraReaderImp implements FedoraReader {
 	}
 
 	private List<String> possiblyReadMoreObjectsFromFedoraLimitByRows(String type, int rows,
-																																		String responseXML) {
+			String responseXML) {
 		var cursor = fedoraReaderXmlHelper.getCursorIfAvailable(responseXML);
 		if (cursor != null) {
 			String nextPageInCursor = getFedoraCursorUrlForType(type, maxResults, cursor);
@@ -245,9 +250,21 @@ public class FedoraReaderImp implements FedoraReader {
 	}
 
 	private String getFedoraCursorUrlForType(String type, int maxResults,
-																					 FedoraReaderCursor cursor) {
+			FedoraReaderCursor cursor) {
 		return String.format(
 				"%s/objects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
 				baseUrl, cursor.getToken(), maxResults, type);
+	}
+
+	protected String forTestGetBaseUrl() {
+		return baseUrl;
+	}
+
+	protected HttpHandlerFactory forTestGetHttpHandlerFactory() {
+		return httpHandlerFactory;
+	}
+
+	protected FedoraReaderXmlHelper forTestGetFedoraReaderXmlHelper() {
+		return fedoraReaderXmlHelper;
 	}
 }

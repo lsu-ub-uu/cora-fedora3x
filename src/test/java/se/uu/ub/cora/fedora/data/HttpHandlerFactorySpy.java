@@ -25,12 +25,12 @@ import se.uu.ub.cora.httphandler.HttpMultiPartUploader;
 public class HttpHandlerFactorySpy implements HttpHandlerFactory {
 
 	public boolean couldNotFactorForUrl = false;
-	public int factoredHttpHandlers = 0;
+	public int noOfFactoredHttpHandlers = 0;
 	public HttpHandlerSpy httpHandlerSpy;
 
 	@Override
 	public HttpHandler factor(String url) {
-		factoredHttpHandlers++;
+		noOfFactoredHttpHandlers++;
 		if (couldNotFactorForUrl) {
 			throw new RuntimeException("HttpHandlerFactory did not have a handler for: " + url);
 		}

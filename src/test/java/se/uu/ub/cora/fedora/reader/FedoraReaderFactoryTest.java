@@ -18,31 +18,64 @@
  */
 package se.uu.ub.cora.fedora.reader;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
+
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
 import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelper;
 import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelperSpy;
 import se.uu.ub.cora.fedora.data.HttpHandlerFactorySpy;
-import se.uu.ub.cora.fedora.reader.FedoraReaderFactory;
-import se.uu.ub.cora.fedora.reader.FedoraReaderFactoryImp;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
-
-import static org.testng.Assert.assertNotNull;
 
 public class FedoraReaderFactoryTest {
 
 	private FedoraReaderFactory fedoraReaderFactory;
+	private HttpHandlerFactory httpHandlerFactory;
+	private FedoraReaderXmlHelper fedoraReaderXmlHelper;
 
 	@BeforeMethod
 	public void init() {
-		HttpHandlerFactory httpHandlerFactory = new HttpHandlerFactorySpy();
-		FedoraReaderXmlHelper fedoraReaderXmlHelper = new FedoraReaderXmlHelperSpy();
-		fedoraReaderFactory = new FedoraReaderFactoryImp(httpHandlerFactory,
-				fedoraReaderXmlHelper);
+		httpHandlerFactory = new HttpHandlerFactorySpy();
+		fedoraReaderXmlHelper = new FedoraReaderXmlHelperSpy();
+		fedoraReaderFactory = FedoraReaderFactoryImp
+				.usingHttpHandlerFactoryAndFedoraReaderXmlHelper(httpHandlerFactory,
+						fedoraReaderXmlHelper);
 	}
 
 	@Test
 	public void testGetFedoraReader() {
-		assertNotNull(fedoraReaderFactory.factor("someBaseUrl"));
+		assertTrue(fedoraReaderFactory.factor("someBaseUrl") instanceof FedoraReaderImp);
 	}
+
+	@Test
+	public void testBaseUrlSentToFactored() throws Exception {
+		String baseUrl = "someBaseUrl";
+		FedoraReaderImp reader = (FedoraReaderImp) fedoraReaderFactory.factor(baseUrl);
+
+		assertEquals(reader.forTestGetBaseUrl(), baseUrl);
+	}
+
+	@Test
+	public void testOtherBaseUrlSentToFactored() throws Exception {
+		String baseUrl = "someOtherBaseUrl";
+		FedoraReaderImp reader = (FedoraReaderImp) fedoraReaderFactory.factor(baseUrl);
+
+		assertEquals(reader.forTestGetBaseUrl(), baseUrl);
+	}
+
+	@Test
+	public void testHttpHandlerFactorySentToFactored() {
+		FedoraReaderImp reader = (FedoraReaderImp) fedoraReaderFactory.factor("someBaseUrl");
+		assertSame(httpHandlerFactory, reader.forTestGetHttpHandlerFactory());
+	}
+
+	@Test
+	public void testFedoraReaderXmlHelperSentToFactored() {
+		FedoraReaderImp reader = (FedoraReaderImp) fedoraReaderFactory.factor("someBaseUrl");
+		assertSame(fedoraReaderXmlHelper, reader.forTestGetFedoraReaderXmlHelper());
+	}
+
 }

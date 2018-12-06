@@ -25,14 +25,20 @@ public class FedoraReaderFactoryImp implements FedoraReaderFactory {
 	private HttpHandlerFactory httpHandlerFactory;
 	private FedoraReaderXmlHelper fedoraReaderXmlHelper;
 
-	public FedoraReaderFactoryImp(HttpHandlerFactory httpHandlerFactory,
-																		FedoraReaderXmlHelper fedoraReaderXmlHelper) {
+	public static FedoraReaderFactoryImp usingHttpHandlerFactoryAndFedoraReaderXmlHelper(
+			HttpHandlerFactory httpHandlerFactory, FedoraReaderXmlHelper fedoraReaderXmlHelper) {
+		return new FedoraReaderFactoryImp(httpHandlerFactory, fedoraReaderXmlHelper);
+	}
+
+	private FedoraReaderFactoryImp(HttpHandlerFactory httpHandlerFactory,
+			FedoraReaderXmlHelper fedoraReaderXmlHelper) {
 		this.httpHandlerFactory = httpHandlerFactory;
 		this.fedoraReaderXmlHelper = fedoraReaderXmlHelper;
 	}
 
 	@Override
 	public FedoraReader factor(String baseUrl) {
-		return new FedoraReaderImp(httpHandlerFactory, fedoraReaderXmlHelper, baseUrl);
+		return FedoraReaderImp.usingHttpHandlerFactoryAndFedoraReaderXmlHelperAndBaseUrl(
+				httpHandlerFactory, fedoraReaderXmlHelper, baseUrl);
 	}
 }
