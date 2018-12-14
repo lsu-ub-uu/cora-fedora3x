@@ -14,35 +14,35 @@
   ~     GNU General Public License for more details.
   ~
   ~     You should have received a copy of the GNU General Public License
-  ~     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
+  ~     along with Cora.  If not, see <http://www.gnu.org/licenses />.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>se.uu.ub.cora</groupId>
         <artifactId>cora-parent</artifactId>
-        <version>0.8-SNAPSHOT</version>
+        <version>0.8.6</version>
     </parent>
 
     <artifactId>fedora</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.3-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Fedora Converter</name>
 
     <properties>
-        <httphandler.version>0.4-SNAPSHOT</httphandler.version>
-        <bookkeeper.version>0.12-SNAPSHOT</bookkeeper.version>
-        <spider.version>0.15-SNAPSHOT</spider.version>
-        <sqldatabase.version>0.2-SNAPSHOT</sqldatabase.version>
+        <httphandler.version>0.5.1</httphandler.version>
+        <bookkeeper.version>0.13.0</bookkeeper.version>
+        <spider.version>0.16.0</spider.version>
+        <sqldatabase.version>0.3.1</sqldatabase.version>
     </properties>
 
     <scm>
         <connection>scm:git:https://github.com/lsu-ub-uu/cora-fedora.git</connection>
         <developerConnection>scm:git:https://github.com/lsu-ub-uu/cora-fedora.git</developerConnection>
         <url>https://github.com/lsu-ub-uu/cora-fedora.git</url>
-    </scm>
+      <tag>HEAD</tag>
+  </scm>
 
     <dependencies>
         <dependency>
@@ -66,11 +66,6 @@
             <artifactId>testng</artifactId>
             <version>${testng.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugins</groupId>
