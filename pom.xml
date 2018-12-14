@@ -32,8 +32,8 @@
 
     <properties>
         <httphandler.version>0.5.1</httphandler.version>
-        <bookkeeper.version>0.13.0</bookkeeper.version>
-        <spider.version>0.16.0</spider.version>
+        <bookkeeper.version>0.14.0</bookkeeper.version>
+        <spider.version>0.17.0</spider.version>
         <sqldatabase.version>0.3.1</sqldatabase.version>
     </properties>
 
