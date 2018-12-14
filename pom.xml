@@ -41,7 +41,7 @@
         <connection>scm:git:https://github.com/lsu-ub-uu/cora-fedora.git</connection>
         <developerConnection>scm:git:https://github.com/lsu-ub-uu/cora-fedora.git</developerConnection>
         <url>https://github.com/lsu-ub-uu/cora-fedora.git</url>
-      <tag>HEAD</tag>
+      <tag>release/0.3</tag>
   </scm>
 
     <dependencies>
