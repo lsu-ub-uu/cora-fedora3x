@@ -32,7 +32,7 @@
 
     <properties>
         <httphandler.version>0.5.1</httphandler.version>
-        <bookkeeper.version>0.14.0</bookkeeper.version>
+        <coradata.version>0.1SNAPSHOT</coradata.version>
         <sqldatabase.version>0.3.1</sqldatabase.version>
     </properties>
 
@@ -52,8 +52,8 @@
         </dependency>
         <dependency>
             <groupId>se.uu.ub.cora</groupId>
-            <artifactId>bookkeeper</artifactId>
-            <version>${bookkeeper.version}</version>
+            <artifactId>coradata</artifactId>
+            <version>${coradata.version}</version>
         </dependency>
         <dependency>
             <groupId>org.testng</groupId>
