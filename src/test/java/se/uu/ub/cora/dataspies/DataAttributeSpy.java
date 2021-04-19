@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Uppsala University Library
+ * Copyright 2019 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -16,16 +16,28 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.reader;
+package se.uu.ub.cora.dataspies;
 
-import java.util.List;
+import se.uu.ub.cora.data.DataAttribute;
 
-import se.uu.ub.cora.data.DataGroup;
+public class DataAttributeSpy implements DataAttribute {
 
-public interface FedoraReader {
-	String readObject(String objectId);
+	public String nameInData;
+	public String value;
 
-	List<String> readList(String type, DataGroup filter);
+	public DataAttributeSpy(String nameInData, String value) {
+		this.nameInData = nameInData;
+		this.value = value;
+	}
 
-	void setMaxResults(int count);
+	@Override
+	public String getNameInData() {
+		return nameInData;
+	}
+
+	@Override
+	public String getValue() {
+		return value;
+	}
+
 }

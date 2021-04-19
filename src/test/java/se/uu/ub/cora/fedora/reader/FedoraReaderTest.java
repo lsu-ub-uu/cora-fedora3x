@@ -30,8 +30,12 @@ import java.util.stream.Collectors;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import se.uu.ub.cora.bookkeeper.data.DataAtomic;
-import se.uu.ub.cora.bookkeeper.data.DataGroup;
+import se.uu.ub.cora.data.DataAtomicFactory;
+import se.uu.ub.cora.data.DataAtomicProvider;
+import se.uu.ub.cora.data.DataGroup;
+import se.uu.ub.cora.data.DataGroupProvider;
+import se.uu.ub.cora.dataspies.DataAtomicFactorySpy;
+import se.uu.ub.cora.dataspies.DataGroupFactorySpy;
 import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelperSpy;
 import se.uu.ub.cora.fedora.data.HttpHandlerFactorySpy;
 import se.uu.ub.cora.fedora.data.HttpHandlerSpy;
@@ -50,14 +54,22 @@ public class FedoraReaderTest {
 	private static final String EXPECTED_LIST_URL = String.format(
 			"%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*", SOME_BASE_URL,
 			DEFAULT_MAX_RESULTS, SOME_TYPE);
-	private static final DataGroup EMPTY_FILTER = DataGroup.withNameInData("filter");
+	private DataGroup EMPTY_FILTER;
 	private HttpHandlerFactorySpy httpHandlerFactorySpy;
 	private HttpHandlerSpy httpHandlerSpy;
 	private FedoraReaderXmlHelperSpy fedoraReaderXmlHelperSpy;
 	private FedoraReader reader;
+	private DataGroupFactorySpy dataGroupFactory;
+	private DataAtomicFactory dataAtomicFactory;
 
 	@BeforeMethod
 	void init() {
+		dataGroupFactory = new DataGroupFactorySpy();
+		DataGroupProvider.setDataGroupFactory(dataGroupFactory);
+		dataAtomicFactory = new DataAtomicFactorySpy();
+		DataAtomicProvider.setDataAtomicFactory(dataAtomicFactory);
+
+		EMPTY_FILTER = dataGroupFactory.factorUsingNameInData("filter");
 		httpHandlerSpy = new HttpHandlerSpy();
 		httpHandlerFactorySpy = new HttpHandlerFactorySpy();
 		httpHandlerFactorySpy.httpHandlerSpy = httpHandlerSpy;
@@ -92,15 +104,16 @@ public class FedoraReaderTest {
 		return String.format("%s/objects/%s/datastreams/METADATA/content", baseUrl, objectId);
 	}
 
-	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Fedora object not found: "
-			+ SOME_OBJECT_ID)
+	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = ""
+			+ "Fedora object not found: " + SOME_OBJECT_ID)
 	public void testReadingAnObjectShouldThrowNotFoundIfNotFound() {
 		httpHandlerSpy.urlCallResponseCode.push(404);
 
 		reader.readObject(SOME_OBJECT_ID);
 	}
 
-	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Fedora call failed: 418")
+	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = ""
+			+ "Fedora call failed: 418")
 	public void testReadingAnObjectShouldThrowTheHttpResponseCodeIfNotOk() {
 		httpHandlerSpy.urlCallResponseCode.push(418);
 
@@ -123,32 +136,38 @@ public class FedoraReaderTest {
 				"someBaseUrl/objects/generatedPid:99/datastreams/METADATA/content");
 	}
 
-	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "FedoraReader: Bad XML:.+")
+	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = ""
+			+ "FedoraReader: Bad XML:.+")
 	public void testReadingListWithBadXML() {
 		fedoraReaderXmlHelperSpy.failPidExtraction = true;
 		reader.readList(SOME_TYPE, EMPTY_FILTER);
 	}
 
-	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "FedoraReader: Bad XML:.+")
+	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = ""
+			+ "FedoraReader: Bad XML:.+")
 	public void testReadingFromStartRowsListWithBadXML() {
 		fedoraReaderXmlHelperSpy.failPidExtraction = true;
 
 		int rows = 1;
 		int start = 4;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 
 		reader.readList(SOME_TYPE, filter);
 	}
 
-	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Invalid XML")
+	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = ""
+			+ "Invalid XML")
 	public void testReadingRowsListWithBadXML() {
 		fedoraReaderXmlHelperSpy.failPidExtraction = true;
 
 		int rows = 1;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
 
 		reader.readList(SOME_TYPE, filter);
 	}
@@ -166,7 +185,8 @@ public class FedoraReaderTest {
 		assertEquals(results.size(), 123);
 	}
 
-	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "FedoraReader: Fedora call failed: 418")
+	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = ""
+			+ "FedoraReader: Fedora call failed: 418")
 	public void testReadingAListShouldThrowIfNotOk() {
 		var failingType = "someFailingType";
 		httpHandlerSpy.urlCallResponseCode.push(418);
@@ -174,31 +194,36 @@ public class FedoraReaderTest {
 		reader.readList(failingType, EMPTY_FILTER);
 	}
 
-	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Fedora call failed: 418")
+	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = ""
+			+ "Fedora call failed: 418")
 	public void testReadingAListWithRowLimitShouldThrowIfNotOk() {
 		var failingType = "someFailingType";
 
 		httpHandlerSpy.urlCallResponseCode.push(418);
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(42)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(42)));
 
 		reader.readList(failingType, filter);
 	}
 
-	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "FedoraReader: Fedora call failed: 418")
+	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = ""
+			+ "Fedora call failed: 418")
 	public void testReadingAListWithStartShouldThrowIfNotOk() {
 		var failingType = "someFailingType";
 
 		httpHandlerSpy.urlCallResponseCode.push(418);
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(42)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(42)));
 
 		reader.readList(failingType, filter);
 	}
 
-	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "FedoraReader: Fedora object not found: someMissingType")
+	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = ""
+			+ "FedoraReader: Fedora object not found: someMissingType")
 	public void testReadingAListShouldThrowNotFoundIfNotFound() {
-		var missingType = "someMissingType";
+		String missingType = "someMissingType";
 		httpHandlerSpy.urlCallResponseCode.push(404);
 
 		reader.readList(missingType, EMPTY_FILTER);
@@ -210,13 +235,13 @@ public class FedoraReaderTest {
 
 		fedoraReaderXmlHelperSpy.pidList = pidList;
 
-		var listUrl = expectedListUrl(SOME_TYPE, 42);
+		String listUrl = expectedListUrl(SOME_TYPE, 42);
 		httpHandlerSpy.urlCallResponseCode.push(200);
 		httpHandlerSpy.urlCallResponseText.push(listUrl + " xml");
 
 		reader.setMaxResults(42);
 
-		var result = reader.readList(SOME_TYPE, EMPTY_FILTER);
+		List<String> result = reader.readList(SOME_TYPE, EMPTY_FILTER);
 
 		assertEquals(httpHandlerSpy.getUrlCountCallFor(listUrl), 0);
 		assertEquals(httpHandlerFactorySpy.noOfFactoredHttpHandlers, 6);
@@ -293,8 +318,9 @@ public class FedoraReaderTest {
 		reader.setMaxResults(42);
 
 		int start = 2;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 
 		var result = reader.readList(SOME_TYPE, filter);
 
@@ -325,8 +351,9 @@ public class FedoraReaderTest {
 		reader.setMaxResults(3);
 
 		int start = 2;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 		var result = reader.readList(SOME_TYPE, filter);
 
 		var listUrl = expectedListUrl(SOME_TYPE, 3);
@@ -349,8 +376,9 @@ public class FedoraReaderTest {
 		reader.setMaxResults(3);
 
 		int start = 2;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 		var result = reader.readList(SOME_TYPE, filter);
 
 		var listUrl = expectedListUrl(SOME_TYPE, 3);
@@ -374,8 +402,9 @@ public class FedoraReaderTest {
 		reader.setMaxResults(42);
 
 		int start = 3;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 
 		var result = reader.readList(SOME_TYPE, filter);
 
@@ -396,8 +425,9 @@ public class FedoraReaderTest {
 		reader.setMaxResults(3);
 
 		int start = 3;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 		var result = reader.readList(SOME_TYPE, filter);
 
 		var listUrl = expectedListUrl(SOME_TYPE, 3);
@@ -420,8 +450,9 @@ public class FedoraReaderTest {
 		reader.setMaxResults(3);
 
 		int start = 3;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 		var result = reader.readList(SOME_TYPE, filter);
 
 		var listUrl = expectedListUrl(SOME_TYPE, 3);
@@ -453,8 +484,9 @@ public class FedoraReaderTest {
 		reader.setMaxResults(42);
 
 		int rows = 4;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
 
 		var result = reader.readList(SOME_TYPE, filter);
 
@@ -567,8 +599,9 @@ public class FedoraReaderTest {
 		reader.setMaxResults(42);
 
 		int rows = 7;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
 
 		var result = reader.readList(SOME_TYPE, filter);
 
@@ -589,8 +622,9 @@ public class FedoraReaderTest {
 		reader.setMaxResults(3);
 
 		int rows = 4;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
 		var result = reader.readList(SOME_TYPE, filter);
 
 		var listUrl = expectedListUrl(SOME_TYPE, 3);
@@ -613,8 +647,9 @@ public class FedoraReaderTest {
 		reader.setMaxResults(3);
 
 		int rows = 6;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
 		var result = reader.readList(SOME_TYPE, filter);
 
 		var listUrl = expectedListUrl(SOME_TYPE, 3);
@@ -646,8 +681,9 @@ public class FedoraReaderTest {
 		reader.setMaxResults(42);
 
 		int rows = 5;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
 
 		var result = reader.readList(SOME_TYPE, filter);
 		assertEquals(httpHandlerSpy.urlCall.firstElement(), listUrl);
@@ -667,8 +703,9 @@ public class FedoraReaderTest {
 		reader.setMaxResults(3);
 
 		int rows = 3;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
 		var result = reader.readList(SOME_TYPE, filter);
 
 		var listUrl = expectedListUrl(SOME_TYPE, 3);
@@ -689,8 +726,9 @@ public class FedoraReaderTest {
 		reader.setMaxResults(3);
 
 		int rows = 7;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
 		var result = reader.readList(SOME_TYPE, filter);
 
 		var listUrl = expectedListUrl(SOME_TYPE, 3);
@@ -713,9 +751,11 @@ public class FedoraReaderTest {
 
 		int rows = 3;
 		int start = 1;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 
 		var result = reader.readList(SOME_TYPE, filter);
 		var listUrl = expectedListUrlWithCursor(42);
@@ -739,9 +779,11 @@ public class FedoraReaderTest {
 
 		int rows = 7;
 		int start = 1;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 
 		var result = reader.readList(SOME_TYPE, filter);
 
@@ -766,9 +808,11 @@ public class FedoraReaderTest {
 
 		int rows = 4;
 		int start = 1;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 
 		var result = reader.readList(SOME_TYPE, filter);
 
@@ -791,9 +835,11 @@ public class FedoraReaderTest {
 
 		int rows = 6;
 		int start = 1;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 		var result = reader.readList(SOME_TYPE, filter);
 
 		var listUrl = expectedListUrl(SOME_TYPE, 3);
@@ -827,9 +873,11 @@ public class FedoraReaderTest {
 
 		int rows = 1;
 		int start = 2;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 
 		var result = reader.readList(SOME_TYPE, filter);
 
@@ -852,9 +900,11 @@ public class FedoraReaderTest {
 
 		int rows = 7;
 		int start = 5;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 
 		var result = reader.readList(SOME_TYPE, filter);
 
@@ -878,9 +928,11 @@ public class FedoraReaderTest {
 
 		int rows = 1;
 		int start = 4;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 
 		var result = reader.readList(SOME_TYPE, filter);
 
@@ -905,9 +957,11 @@ public class FedoraReaderTest {
 
 		int rows = 1;
 		int start = 5;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 
 		var result = reader.readList(SOME_TYPE, filter);
 
@@ -928,9 +982,11 @@ public class FedoraReaderTest {
 
 		int rows = 5;
 		int start = 2;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 		var result = reader.readList(SOME_TYPE, filter);
 
 		var listUrl = expectedListUrl(SOME_TYPE, 2);
@@ -946,9 +1002,8 @@ public class FedoraReaderTest {
 	@Test
 	public void testAskingForZeroRowsShouldYieldEmptyResponse() {
 
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", "0"));
-
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(0)));
 		var result = reader.readList(SOME_TYPE, filter);
 
 		assertEquals(result, List.of());
@@ -957,8 +1012,8 @@ public class FedoraReaderTest {
 	@Test
 	public void testAskingForOneRowShouldYieldOneRow() {
 
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", "1"));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(1)));
 
 		var result = reader.readList(SOME_TYPE, filter);
 
@@ -969,31 +1024,37 @@ public class FedoraReaderTest {
 	public void testAskingForSomethingAfterTheEndOfThePidListShouldYieldAnEmptyList() {
 		fedoraReaderXmlHelperSpy.pidList = List.of();
 
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", "1"));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(1)));
 
 		var result = reader.readList(SOME_TYPE, filter);
 
 		assertEquals(result, List.of());
 	}
 
-	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Invalid start value \\(-12\\)")
+	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = ""
+			+ "Invalid start value \\(-12\\)")
 	public void testPagingFromBrokenStartLimitedByRowsWithThreePages() {
 
 		int rows = 5;
 		int start = -12;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
-		filter.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("start", String.valueOf(start)));
 		reader.readList(SOME_TYPE, filter);
 	}
 
-	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Invalid row count \\(-1\\)")
+	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = ""
+			+ "Invalid row count \\(-1\\)")
 	public void testPagingFromStartLimitedByBrokenRowsWithStartThreePages() {
 
 		int rows = -1;
-		var filter = DataGroup.withNameInData("filter");
-		filter.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+		DataGroup filter = dataGroupFactory.factorUsingNameInData("filter");
+		filter.addChild(
+				dataAtomicFactory.factorUsingNameInDataAndValue("rows", String.valueOf(rows)));
 		reader.readList(SOME_TYPE, filter);
 	}
 

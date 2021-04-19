@@ -21,7 +21,7 @@ package se.uu.ub.cora.fedora.reader;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import se.uu.ub.cora.bookkeeper.data.DataGroup;
+import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.fedora.data.FedoraReaderCursor;
 import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelper;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
@@ -168,7 +168,11 @@ public class FedoraReaderImp implements FedoraReader {
 	}
 
 	private int getStartValueOrZeroAsDefaultFromFilter(DataGroup filter) {
-		return Integer.parseInt(filter.getFirstAtomicValueWithNameInDataOrDefault("start", "0"));
+		if (filter.containsChildWithNameInData("start")) {
+
+			return Integer.parseInt(filter.getFirstAtomicValueWithNameInData("start"));
+		}
+		return 0;
 	}
 
 	private boolean filterHasRowsRequest(DataGroup filter) {
