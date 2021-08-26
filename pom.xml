@@ -22,7 +22,7 @@
     <parent>
         <groupId>se.uu.ub.cora</groupId>
         <artifactId>cora-parent</artifactId>
-        <version>1.3.1</version>
+        <version>1.4.4</version>
     </parent>
 
     <artifactId>fedora</artifactId>
@@ -31,9 +31,9 @@
     <name>Fedora Converter</name>
 
     <properties>
-		<httphandler.version>2.2.0</httphandler.version>
-        <coradata.version>3.8.0</coradata.version>
-        <json.version>2.2.0</json.version>
+		<httphandler.version>2.3.0</httphandler.version>
+        <coradata.version>5.1.0</coradata.version>
+        <json.version>2.5.0</json.version>
     </properties>
 
     <scm>
