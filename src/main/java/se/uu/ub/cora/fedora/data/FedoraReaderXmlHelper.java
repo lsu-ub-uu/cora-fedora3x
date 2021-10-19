@@ -21,11 +21,7 @@ package se.uu.ub.cora.fedora.data;
 import java.util.List;
 
 public interface FedoraReaderXmlHelper {
-	FedoraReaderCursor getCursorIfAvailable(String xml);
+	FedoraReaderCursor getCursorIfAvailable(String responseXML);
 
-	List<String> getPidList(String xml);
-
-	XMLXPathParserFactory getXmlXPathParseFactory();
-
-	void setXmlXPathParseFactory(XMLXPathParserFactory xmlXPathParserFactory);
+	List<String> getPidList(String responseXML);
 }

@@ -92,14 +92,14 @@ public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
 		return List.of();
 	}
 
-	@Override
-	public XMLXPathParserFactory getXmlXPathParseFactory() {
-		return null;
-	}
-
-	@Override
-	public void setXmlXPathParseFactory(XMLXPathParserFactory xmlXPathParserFactory) {
-
-	}
+	// @Override
+	// public XMLXPathParserFactory getXmlXPathParseFactory() {
+	// return null;
+	// }
+	//
+	// @Override
+	// public void setXmlXPathParseFactory(XMLXPathParserFactory xmlXPathParserFactory) {
+	//
+	// }
 
 }

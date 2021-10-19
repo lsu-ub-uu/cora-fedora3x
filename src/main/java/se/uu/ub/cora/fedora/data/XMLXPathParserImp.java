@@ -44,11 +44,10 @@ public final class XMLXPathParserImp implements XMLXPathParser {
 	private XPath xpath;
 
 	@Override
-	public XMLXPathParser forXML(String xml) throws XMLXPathParserException {
+	public void setupToHandleResponseXML(String xml) throws XMLXPathParserException {
 		try {
 			document = createDocumentFromXML(xml);
 			setupXPath();
-			return this;
 		} catch (Exception e) {
 			throw new XMLXPathParserException("Can not readObject xml: " + e.getMessage(), e);
 		}

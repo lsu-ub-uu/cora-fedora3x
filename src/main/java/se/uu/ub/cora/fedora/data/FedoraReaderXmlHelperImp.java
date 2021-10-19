@@ -18,19 +18,20 @@
  */
 package se.uu.ub.cora.fedora.data;
 
-import org.w3c.dom.NodeList;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.w3c.dom.NodeList;
 
 public class FedoraReaderXmlHelperImp implements FedoraReaderXmlHelper {
 	private XMLXPathParserFactory xmlXPathParserFactory;
 
 	@Override
-	public FedoraReaderCursor getCursorIfAvailable(String xml) {
+	public FedoraReaderCursor getCursorIfAvailable(String responseXML) {
 		try {
-			var xmlXPathParsers = xmlXPathParserFactory.factor().forXML(xml);
-			return extractCursor(xmlXPathParsers);
+			XMLXPathParser xmlXPathParser = xmlXPathParserFactory.factor();
+			xmlXPathParser.setupToHandleResponseXML(responseXML);
+			return extractCursor(xmlXPathParser);
 		} catch (XMLXPathParserException e) {
 			throw new RuntimeException("malformed cursor", e);
 		}
@@ -77,10 +78,11 @@ public class FedoraReaderXmlHelperImp implements FedoraReaderXmlHelper {
 	}
 
 	@Override
-	public List<String> getPidList(String xml) {
+	public List<String> getPidList(String responseXML) {
 		try {
-			var xmlXPathParsers = xmlXPathParserFactory.factor().forXML(xml);
-			return extractPidList(xmlXPathParsers);
+			XMLXPathParser xmlXPathParser = xmlXPathParserFactory.factor();
+			xmlXPathParser.setupToHandleResponseXML(responseXML);
+			return extractPidList(xmlXPathParser);
 		} catch (XMLXPathParserException e) {
 			throw new RuntimeException("There was no resultList in given XML", e);
 		}
@@ -110,12 +112,10 @@ public class FedoraReaderXmlHelperImp implements FedoraReaderXmlHelper {
 		return result;
 	}
 
-	@Override
 	public XMLXPathParserFactory getXmlXPathParseFactory() {
 		return xmlXPathParserFactory;
 	}
 
-	@Override
 	public void setXmlXPathParseFactory(XMLXPathParserFactory xmlXPathParserFactory) {
 		this.xmlXPathParserFactory = xmlXPathParserFactory;
 	}

@@ -18,12 +18,19 @@
  */
 package se.uu.ub.cora.fedora.data;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.AssertJUnit.assertFalse;
+
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import org.w3c.dom.*;
-
-import static org.testng.Assert.*;
-import static org.testng.AssertJUnit.assertFalse;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.UserDataHandler;
 
 public class XMLXPathParserTest {
 	private XMLXPathParserFactory xmlxPathParserFactory = new XMLXPathParserFactoryImp();
@@ -36,45 +43,44 @@ public class XMLXPathParserTest {
 
 	@Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "Can not readObject xml: XML document structures must start and end within the same entity.")
 	public void testBadXmlShouldThrow() throws Exception {
-		xmlxPathParser.forXML("<pid>");
+		xmlxPathParser.setupToHandleResponseXML("<pid>");
 	}
-
 
 	@Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "Unable to use xpathString: javax.xml.transform.TransformerException: Extra illegal tokens: 'not'")
 	public void testMalformedXPath() throws Exception {
-		XMLXPathParser parser = xmlxPathParser.forXML("<pid></pid>");
-		parser.getStringFromDocumentUsingXPath("/broken/xpath/string not");
+		xmlxPathParser.setupToHandleResponseXML("<pid></pid>");
+		xmlxPathParser.getStringFromDocumentUsingXPath("/broken/xpath/string not");
 	}
 
 	@Test
 	public void testGoodXPath() throws Exception {
-		XMLXPathParser parser = xmlxPathParser.forXML("<pid></pid>");
-		var result = parser.getStringFromDocumentUsingXPath("/");
+		xmlxPathParser.setupToHandleResponseXML("<pid></pid>");
+		var result = xmlxPathParser.getStringFromDocumentUsingXPath("/");
 		assertNotNull(result);
 	}
 
 	@Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "Unable to use xpathString: javax.xml.transform.TransformerException: Extra illegal tokens: 'not'")
 	public void testMalformedXPathForNodeList() throws Exception {
-		XMLXPathParser parser = xmlxPathParser.forXML("<pid></pid>");
-		parser.getNodeListFromDocumentUsingXPath("/broken/xpath/string not");
+		xmlxPathParser.setupToHandleResponseXML("<pid></pid>");
+		xmlxPathParser.getNodeListFromDocumentUsingXPath("/broken/xpath/string not");
 	}
 
 	@Test
 	public void testGoodXPathForNodeList() throws Exception {
-		XMLXPathParser parser = xmlxPathParser.forXML("<pid></pid>");
-		var result = parser.getNodeListFromDocumentUsingXPath("/");
+		xmlxPathParser.setupToHandleResponseXML("<pid></pid>");
+		var result = xmlxPathParser.getNodeListFromDocumentUsingXPath("/");
 		assertNotNull(result);
 	}
 
 	@Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "Unable to use xpathString: javax.xml.transform.TransformerException: Extra illegal tokens: 'not'")
 	public void testMalformedNodeXPath() throws Exception {
-		XMLXPathParser parser = xmlxPathParser.forXML("<pid></pid>");
-		parser.getStringFromNodeUsingXPath(null, "/broken/xpath/string not");
+		xmlxPathParser.setupToHandleResponseXML("<pid></pid>");
+		xmlxPathParser.getStringFromNodeUsingXPath(null, "/broken/xpath/string not");
 	}
 
 	@Test
 	public void testGoodNodeXPath() throws Exception {
-		XMLXPathParser parser = xmlxPathParser.forXML("<pid></pid>");
+		xmlxPathParser.setupToHandleResponseXML("<pid></pid>");
 		Node node = new Node() {
 			@Override
 			public String getNodeName() {
@@ -262,38 +268,37 @@ public class XMLXPathParserTest {
 			}
 		};
 
-		assertEquals(parser.getStringFromNodeUsingXPath(node, "/"), "");
+		assertEquals(xmlxPathParser.getStringFromNodeUsingXPath(node, "/"), "");
 	}
 
 	@Test
 	public void testNodeIsPresent() throws Exception {
-		XMLXPathParser parser = xmlxPathParser.forXML("<bob></bob>");
-		assertTrue(parser.hasNode("/bob"));
+		xmlxPathParser.setupToHandleResponseXML("<bob></bob>");
+		assertTrue(xmlxPathParser.hasNode("/bob"));
 	}
 
 	@Test
 	public void testNodeIsNotPresentAsRoot() throws Exception {
-		XMLXPathParser parser = xmlxPathParser.forXML("<bob><alice></alice></bob>");
-		assertFalse(parser.hasNode("/alice"));
+		xmlxPathParser.setupToHandleResponseXML("<bob><alice></alice></bob>");
+		assertFalse(xmlxPathParser.hasNode("/alice"));
 	}
 
 	@Test
 	public void testNodeIsPresentSomeWhere() throws Exception {
-		XMLXPathParser parser = xmlxPathParser.forXML("<bob><alice></alice></bob>");
-		assertTrue(parser.hasNode("//alice"));
+		xmlxPathParser.setupToHandleResponseXML("<bob><alice></alice></bob>");
+		assertTrue(xmlxPathParser.hasNode("//alice"));
 	}
 
 	@Test
 	public void testNodeIsNotPresentAtAll() throws Exception {
-		XMLXPathParser parser = xmlxPathParser.forXML("<bob></bob>");
-		assertFalse(parser.hasNode("//alice"));
+		xmlxPathParser.setupToHandleResponseXML("<bob></bob>");
+		assertFalse(xmlxPathParser.hasNode("//alice"));
 	}
-
 
 	@Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "Invalid XPath")
 	public void testMalformedXPathQueryToHasNode() throws Exception {
-		XMLXPathParser parser = xmlxPathParser.forXML("<pid></pid>");
-		parser.hasNode("this is not a valid XPath");
+		xmlxPathParser.setupToHandleResponseXML("<pid></pid>");
+		xmlxPathParser.hasNode("this is not a valid XPath");
 	}
 
 }

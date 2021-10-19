@@ -22,7 +22,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public interface XMLXPathParser {
-	XMLXPathParser forXML(String xml) throws XMLXPathParserException;
+	void setupToHandleResponseXML(String xml) throws XMLXPathParserException;
 
 	boolean hasNode(String xPath) throws XMLXPathParserException;
 

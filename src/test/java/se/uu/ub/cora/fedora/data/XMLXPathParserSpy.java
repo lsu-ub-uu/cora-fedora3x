@@ -18,11 +18,11 @@
  */
 package se.uu.ub.cora.fedora.data;
 
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 public class XMLXPathParserSpy implements XMLXPathParser {
 	public Map<String, Boolean> validXml;
@@ -57,7 +57,7 @@ public class XMLXPathParserSpy implements XMLXPathParser {
 	}
 
 	@Override
-	public XMLXPathParser forXML(String xml) throws XMLXPathParserException {
+	public void setupToHandleResponseXML(String xml) throws XMLXPathParserException {
 		increaseCallCount(xml);
 		if (validXml.containsKey(xml)) {
 			if (!validXml.get(xml)) {
@@ -65,7 +65,6 @@ public class XMLXPathParserSpy implements XMLXPathParser {
 			}
 		}
 		lastParsedXml = xml;
-		return this;
 	}
 
 	private void increaseCallCount(String xml) {

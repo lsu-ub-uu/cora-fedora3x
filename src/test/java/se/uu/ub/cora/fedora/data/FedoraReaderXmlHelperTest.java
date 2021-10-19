@@ -18,8 +18,10 @@
  */
 package se.uu.ub.cora.fedora.data;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -27,10 +29,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.testng.Assert.*;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 public class FedoraReaderXmlHelperTest {
-	private FedoraReaderXmlHelper fedoraReaderXmlHelper;
+	private FedoraReaderXmlHelperImp fedoraReaderXmlHelper;
 	private XMLXPathParserFactory xmlXPathParserFactory;
 	private String xmlForThreePidAndCursorAtZero;
 	private String xmlEmptyWithOnlyRootResultElement;
@@ -58,8 +61,8 @@ public class FedoraReaderXmlHelperTest {
 
 	private String resourceToString(String resourceFile) {
 		try (var file = getClass().getResourceAsStream(resourceFile);
-				 var stream = new InputStreamReader(file);
-				 var buffered = new BufferedReader(stream)) {
+				var stream = new InputStreamReader(file);
+				var buffered = new BufferedReader(stream)) {
 			return buffered.lines().collect(Collectors.joining());
 		} catch (Exception e) {
 			e.printStackTrace();
