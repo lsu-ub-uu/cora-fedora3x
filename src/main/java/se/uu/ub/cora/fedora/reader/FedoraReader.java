@@ -28,4 +28,13 @@ public interface FedoraReader {
 	List<String> readList(String type, DataGroup filter);
 
 	void setMaxResults(int count);
+
+	/**
+	 * readPidsForType returns a list of all pids for a given type.
+	 * 
+	 * @param type
+	 *            A String with the type to return pids for
+	 * @return A List of Strings with the PID:s for the specified type
+	 */
+	List<String> readPidsForType(String type);
 }

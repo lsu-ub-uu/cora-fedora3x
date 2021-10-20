@@ -34,6 +34,7 @@
 		<httphandler.version>2.3.0</httphandler.version>
         <coradata.version>5.1.0</coradata.version>
         <json.version>2.5.0</json.version>
+        <testutils.version>1.2-SNAPSHOT</testutils.version>
     </properties>
 
     <scm>
@@ -68,5 +69,11 @@
             <version>${testng.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+			<groupId>se.uu.ub.cora</groupId>
+			<artifactId>testutils</artifactId>
+			<version>${testutils.version}</version>
+			<scope>test</scope>
+		</dependency>
     </dependencies>
 </project>

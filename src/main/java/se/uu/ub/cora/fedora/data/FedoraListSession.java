@@ -18,11 +18,11 @@
  */
 package se.uu.ub.cora.fedora.data;
 
-public class FedoraReaderCursor {
-	private final String token;
-	private String cursor;
+public class FedoraListSession {
+	public final String token;
+	public String cursor;
 
-	public FedoraReaderCursor(String token) {
+	public FedoraListSession(String token) {
 		this.token = token;
 	}
 

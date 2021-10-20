@@ -23,8 +23,13 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
+
 public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
+	public MethodCallRecorder MCR = new MethodCallRecorder();
+
 	public List<String> pidList;
+	public List<String> pidList2;
 	public int pidCountInStorage = 0;
 	public boolean failPidExtraction;
 	public int hardLimitOnMaxResults = 0;
@@ -37,8 +42,9 @@ public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
 	}
 
 	@Override
-	public FedoraReaderCursor getCursorIfAvailable(String xml) {
-		FedoraReaderCursor fedoraReaderCursor = null;
+	public FedoraListSession getSessionIfAvailable(String xml) {
+		MCR.addCall("xml", xml);
+		FedoraListSession fedoraReaderCursor = null;
 		if (pidList == null) {
 			Pattern p = Pattern.compile(".+maxResults=(\\d+).+");
 			Matcher m = p.matcher(xml);
@@ -52,19 +58,26 @@ public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
 			pidCountInStorage -= maxResults;
 		} else {
 			if (!pidList.isEmpty()) {
-				fedoraReaderCursor = new FedoraReaderCursor("someToken");
+				fedoraReaderCursor = new FedoraListSession("someToken");
 			}
 		}
+		MCR.addReturned(fedoraReaderCursor);
 		return fedoraReaderCursor;
 	}
 
 	@Override
 	public List<String> getPidList(String xml) {
+		MCR.addCall("xml", xml);
 		if (failPidExtraction) {
 			throw new RuntimeException("Bad XML: " + xml);
 		}
+		if (pidList2 != null) {
+			MCR.addReturned(pidList2);
+			return pidList2;
+		}
 		Pattern p = Pattern.compile(".+maxResults=(\\d+).+");
 		Matcher m = p.matcher(xml);
+		List<String> of = List.of();
 		if (m.find()) {
 			int maxResults = Integer.parseInt(m.group(1));
 			if (hardLimitOnMaxResults != 0 && hardLimitOnMaxResults < maxResults) {
@@ -75,31 +88,24 @@ public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
 				for (int idx = 0; idx < maxResults; idx++) {
 					madeUpPidList.add("generatedPid:" + idx);
 				}
+				MCR.addReturned(madeUpPidList);
 				return madeUpPidList;
 			} else {
 				List<String> requestedPidList;
 				if (maxResults > pidList.size()) {
 					requestedPidList = pidList;
-					pidList = List.of();
+					pidList = of;
 				} else {
 					requestedPidList = pidList.subList(0, maxResults);
 					pidList = pidList.subList(maxResults, pidList.size());
 				}
 				pidCountInStorage = pidList.size();
+				MCR.addReturned(requestedPidList);
 				return requestedPidList;
 			}
 		}
-		return List.of();
+		MCR.addReturned(of);
+		return of;
 	}
-
-	// @Override
-	// public XMLXPathParserFactory getXmlXPathParseFactory() {
-	// return null;
-	// }
-	//
-	// @Override
-	// public void setXmlXPathParseFactory(XMLXPathParserFactory xmlXPathParserFactory) {
-	//
-	// }
 
 }

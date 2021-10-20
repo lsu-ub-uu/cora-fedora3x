@@ -18,10 +18,10 @@
  */
 package se.uu.ub.cora.fedora.data;
 
+import static org.testng.Assert.assertNotNull;
+
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertNotNull;
 
 public class XMLXPathParserFactoryTest {
 
@@ -35,10 +35,5 @@ public class XMLXPathParserFactoryTest {
 	@Test
 	public void testGetFXMLXPathParser() {
 		assertNotNull(xmlxPathParserFactory.factor());
-	}
-
-	@Test
-	public void testGetFedoraReaderXmlHelper() {
-		assertNotNull(xmlxPathParserFactory.factorHelper());
 	}
 }

@@ -35,10 +35,4 @@ public class XMLXPathParserFactorySpy implements XMLXPathParserFactory {
 		factorCallCount++;
 		return parserSpy;
 	}
-
-	@Override
-	public FedoraReaderXmlHelper factorHelper() {
-		factorHelperCallCount++;
-		return helperSpy;
-	}
 }

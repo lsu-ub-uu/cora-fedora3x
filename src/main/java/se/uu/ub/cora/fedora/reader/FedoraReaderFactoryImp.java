@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Uppsala University Library
+ * Copyright 2018, 2021 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -18,26 +18,19 @@
  */
 package se.uu.ub.cora.fedora.reader;
 
-import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelper;
+import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelperImp;
+import se.uu.ub.cora.fedora.data.XMLXPathParserFactoryImp;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
+import se.uu.ub.cora.httphandler.HttpHandlerFactoryImp;
 
 public class FedoraReaderFactoryImp implements FedoraReaderFactory {
-	private HttpHandlerFactory httpHandlerFactory;
-	private FedoraReaderXmlHelper fedoraReaderXmlHelper;
-
-	public static FedoraReaderFactoryImp usingHttpHandlerFactoryAndFedoraReaderXmlHelper(
-			HttpHandlerFactory httpHandlerFactory, FedoraReaderXmlHelper fedoraReaderXmlHelper) {
-		return new FedoraReaderFactoryImp(httpHandlerFactory, fedoraReaderXmlHelper);
-	}
-
-	private FedoraReaderFactoryImp(HttpHandlerFactory httpHandlerFactory,
-			FedoraReaderXmlHelper fedoraReaderXmlHelper) {
-		this.httpHandlerFactory = httpHandlerFactory;
-		this.fedoraReaderXmlHelper = fedoraReaderXmlHelper;
-	}
+	private HttpHandlerFactory httpHandlerFactory = new HttpHandlerFactoryImp();
+	private XMLXPathParserFactoryImp xmlxPathParserFactory = new XMLXPathParserFactoryImp();
 
 	@Override
 	public FedoraReader factor(String baseUrl) {
+		FedoraReaderXmlHelperImp fedoraReaderXmlHelper = new FedoraReaderXmlHelperImp(
+				xmlxPathParserFactory);
 		return FedoraReaderImp.usingHttpHandlerFactoryAndFedoraReaderXmlHelperAndBaseUrl(
 				httpHandlerFactory, fedoraReaderXmlHelper, baseUrl);
 	}

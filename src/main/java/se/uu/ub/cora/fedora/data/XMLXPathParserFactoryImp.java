@@ -24,8 +24,9 @@ public class XMLXPathParserFactoryImp implements XMLXPathParserFactory {
 		return new XMLXPathParserImp();
 	}
 
-	@Override
-	public FedoraReaderXmlHelper factorHelper() {
-		return new FedoraReaderXmlHelperImp();
-	}
+	// @Override
+	// public FedoraReaderXmlHelper factorHelper() {
+	// // XMLXPathParserFactory xmlXPathParserFactory = ;
+	// return new FedoraReaderXmlHelperImp(null);
+	// }
 }

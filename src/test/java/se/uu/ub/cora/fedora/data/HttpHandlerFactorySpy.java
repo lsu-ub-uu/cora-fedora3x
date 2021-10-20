@@ -21,26 +21,29 @@ package se.uu.ub.cora.fedora.data;
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 import se.uu.ub.cora.httphandler.HttpMultiPartUploader;
+import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 
 public class HttpHandlerFactorySpy implements HttpHandlerFactory {
-
+	public MethodCallRecorder MCR = new MethodCallRecorder();
 	public boolean couldNotFactorForUrl = false;
 	public int noOfFactoredHttpHandlers = 0;
 	public HttpHandlerSpy httpHandlerSpy;
 
 	@Override
 	public HttpHandler factor(String url) {
+		MCR.addCall("url", url);
 		noOfFactoredHttpHandlers++;
 		if (couldNotFactorForUrl) {
 			throw new RuntimeException("HttpHandlerFactory did not have a handler for: " + url);
 		}
 		httpHandlerSpy.wasCalledWith(url);
+		MCR.addReturned(httpHandlerSpy);
 		return httpHandlerSpy;
 	}
 
 	@Override
 	public HttpMultiPartUploader factorHttpMultiPartUploader(String url) {
-		// TODO Auto-generated method stub
+
 		return null;
 	}
 

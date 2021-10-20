@@ -26,40 +26,44 @@ import org.w3c.dom.NodeList;
 public class FedoraReaderXmlHelperImp implements FedoraReaderXmlHelper {
 	private XMLXPathParserFactory xmlXPathParserFactory;
 
+	public FedoraReaderXmlHelperImp(XMLXPathParserFactory xmlXPathParserFactory) {
+		this.xmlXPathParserFactory = xmlXPathParserFactory;
+	}
+
 	@Override
-	public FedoraReaderCursor getCursorIfAvailable(String responseXML) {
+	public FedoraListSession getSessionIfAvailable(String responseXML) {
 		try {
 			XMLXPathParser xmlXPathParser = xmlXPathParserFactory.factor();
 			xmlXPathParser.setupToHandleResponseXML(responseXML);
-			return extractCursor(xmlXPathParser);
+			return extractListSession(xmlXPathParser);
 		} catch (XMLXPathParserException e) {
 			throw new RuntimeException("malformed cursor", e);
 		}
 	}
 
-	private static FedoraReaderCursor extractCursor(XMLXPathParser xmlxPathParser)
+	private static FedoraListSession extractListSession(XMLXPathParser xmlxPathParser)
 			throws XMLXPathParserException {
-		FedoraReaderCursor fedoraReaderCursor = null;
+		FedoraListSession fedoraListSession = null;
 		if (xmlxPathParser.hasNode("/result/listSession")) {
-			fedoraReaderCursor = tryGetFedoraReaderCursor(xmlxPathParser);
+			fedoraListSession = tryGetFedoraListSession(xmlxPathParser);
 		}
-		return fedoraReaderCursor;
+		return fedoraListSession;
 	}
 
-	private static FedoraReaderCursor tryGetFedoraReaderCursor(XMLXPathParser xmlxPathParser)
+	private static FedoraListSession tryGetFedoraListSession(XMLXPathParser xmlxPathParser)
 			throws XMLXPathParserException {
-		FedoraReaderCursor fedoraReaderCursor = getFedoraReaderCursorWithToken(xmlxPathParser);
+		FedoraListSession fedoraListSession = getFedoraListSessionWithToken(xmlxPathParser);
 		String cursor = tryGetCursorFromXml(xmlxPathParser);
-		fedoraReaderCursor.setCursor(cursor);
-		return fedoraReaderCursor;
+		fedoraListSession.setCursor(cursor);
+		return fedoraListSession;
 	}
 
-	private static FedoraReaderCursor getFedoraReaderCursorWithToken(XMLXPathParser xmlxPathParser)
+	private static FedoraListSession getFedoraListSessionWithToken(XMLXPathParser xmlxPathParser)
 			throws XMLXPathParserException {
 		var token = xmlxPathParser
 				.getStringFromDocumentUsingXPath("/result/listSession/token/text()");
 		throwIfRequiredElementNotFound(token, "token not found in XML");
-		return new FedoraReaderCursor(token);
+		return new FedoraListSession(token);
 	}
 
 	private static void throwIfRequiredElementNotFound(String element, String message)
@@ -116,7 +120,4 @@ public class FedoraReaderXmlHelperImp implements FedoraReaderXmlHelper {
 		return xmlXPathParserFactory;
 	}
 
-	public void setXmlXPathParseFactory(XMLXPathParserFactory xmlXPathParserFactory) {
-		this.xmlXPathParserFactory = xmlXPathParserFactory;
-	}
 }

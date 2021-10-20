@@ -18,12 +18,14 @@
  */
 package se.uu.ub.cora.fedora.reader;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import se.uu.ub.cora.data.DataGroup;
-import se.uu.ub.cora.fedora.data.FedoraReaderCursor;
+import se.uu.ub.cora.fedora.data.FedoraListSession;
 import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelper;
+import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
 public class FedoraReaderImp implements FedoraReader {
@@ -149,7 +151,7 @@ public class FedoraReaderImp implements FedoraReader {
 	}
 
 	private String getNextListUrlUsingCursorAndStart(String type, int start, String responseText) {
-		var cursor = fedoraReaderXmlHelper.getCursorIfAvailable(responseText);
+		var cursor = fedoraReaderXmlHelper.getSessionIfAvailable(responseText);
 		if (cursor == null) {
 			return null;
 		}
@@ -225,7 +227,7 @@ public class FedoraReaderImp implements FedoraReader {
 	}
 
 	private List<String> possiblyReadMoreObjectsFromFedora(String type, String responseXML) {
-		var cursor = fedoraReaderXmlHelper.getCursorIfAvailable(responseXML);
+		var cursor = fedoraReaderXmlHelper.getSessionIfAvailable(responseXML);
 		if (cursor != null) {
 			String nextPageInCursor = getFedoraCursorUrlForType(type, maxResults, cursor);
 			return getFedoraXml(type, nextPageInCursor);
@@ -235,7 +237,7 @@ public class FedoraReaderImp implements FedoraReader {
 
 	private List<String> possiblyReadMoreObjectsFromFedoraLimitByRows(String type, int rows,
 			String responseXML) {
-		var cursor = fedoraReaderXmlHelper.getCursorIfAvailable(responseXML);
+		var cursor = fedoraReaderXmlHelper.getSessionIfAvailable(responseXML);
 		if (cursor != null) {
 			String nextPageInCursor = getFedoraCursorUrlForType(type, maxResults, cursor);
 			return getObjectXmlListLimitByRows(type, nextPageInCursor, rows);
@@ -254,21 +256,41 @@ public class FedoraReaderImp implements FedoraReader {
 	}
 
 	private String getFedoraCursorUrlForType(String type, int maxResults,
-			FedoraReaderCursor cursor) {
+			FedoraListSession cursor) {
 		return String.format(
 				"%s/objects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
 				baseUrl, cursor.getToken(), maxResults, type);
 	}
 
-	protected String forTestGetBaseUrl() {
+	protected String onlyForTestGetBaseUrl() {
 		return baseUrl;
 	}
 
-	protected HttpHandlerFactory forTestGetHttpHandlerFactory() {
+	protected HttpHandlerFactory onlyForTestGetHttpHandlerFactory() {
 		return httpHandlerFactory;
 	}
 
-	protected FedoraReaderXmlHelper forTestGetFedoraReaderXmlHelper() {
+	protected FedoraReaderXmlHelper onlyForTestGetFedoraReaderXmlHelper() {
 		return fedoraReaderXmlHelper;
+	}
+
+	@Override
+	public List<String> readPidsForType(String type) {
+		String fedoraUrlForType = getFedoraUrlForType("someType", Integer.MAX_VALUE);
+		HttpHandler httpHandler = httpHandlerFactory.factor(fedoraUrlForType);
+		httpHandler.getResponseCode();
+
+		String resultFromHttpHandler = httpHandler.getResponseText();
+		List<String> pidList = fedoraReaderXmlHelper.getPidList(resultFromHttpHandler);
+		FedoraListSession session = fedoraReaderXmlHelper
+				.getSessionIfAvailable(resultFromHttpHandler);
+
+		List<String> pidListOut = new ArrayList<>();
+		pidListOut.addAll(pidList);
+		// responseXML
+		// fedoraReaderXmlHelper.getPidList
+		// läggas till lista som ska returneras
+		// loopa
+		return pidListOut;
 	}
 }

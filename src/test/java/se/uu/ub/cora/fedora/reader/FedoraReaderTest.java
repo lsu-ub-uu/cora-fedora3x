@@ -19,6 +19,7 @@
 package se.uu.ub.cora.fedora.reader;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 import java.util.Arrays;
@@ -62,6 +63,8 @@ public class FedoraReaderTest {
 	private DataGroupFactorySpy dataGroupFactory;
 	private DataAtomicFactory dataAtomicFactory;
 	private DataGroup filter;
+	private HttpHandlerFactorySpy2 httpHandlerFactorySpy2;
+	private FedoraReaderXmlHelperSpy2 fedoraReaderXmlHelperSpy2;
 
 	@BeforeMethod
 	void init() {
@@ -1023,6 +1026,38 @@ public class FedoraReaderTest {
 
 		filterAddRows(rows);
 		reader.readList(SOME_TYPE, filter);
+	}
+
+	@Test
+	public void testReadPidsForTypeOnlyOneSetOfResults() throws Exception {
+		setUpBetterSpies();
+
+		String type = "someType";
+
+		List<String> listOfPids = reader.readPidsForType(type);
+
+		assertNotNull(listOfPids);
+
+		String urlToListPids = String.format(
+				"%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
+				SOME_BASE_URL, Integer.MAX_VALUE, SOME_TYPE);
+
+		httpHandlerFactorySpy2.MCR.assertParameters("factor", 0, urlToListPids);
+		HttpHandlerSpy2 handlerSpy = (HttpHandlerSpy2) httpHandlerFactorySpy2.MCR
+				.getReturnValue("factor", 0);
+		handlerSpy.MCR.assertMethodWasCalled("getResponseCode");
+		String resultFromHttpHandler = (String) handlerSpy.MCR.getReturnValue("getResponseText", 0);
+		fedoraReaderXmlHelperSpy2.MCR.assertParameters("getPidList", 0, resultFromHttpHandler);
+		fedoraReaderXmlHelperSpy2.MCR.assertParameters("getSessionIfAvailable", 0,
+				resultFromHttpHandler);
+		assertEquals(listOfPids, fedoraReaderXmlHelperSpy2.MCR.getReturnValue("getPidList", 0));
+	}
+
+	public void setUpBetterSpies() {
+		httpHandlerFactorySpy2 = new HttpHandlerFactorySpy2();
+		fedoraReaderXmlHelperSpy2 = new FedoraReaderXmlHelperSpy2();
+		reader = FedoraReaderImp.usingHttpHandlerFactoryAndFedoraReaderXmlHelperAndBaseUrl(
+				httpHandlerFactorySpy2, fedoraReaderXmlHelperSpy2, SOME_BASE_URL);
 	}
 
 }
