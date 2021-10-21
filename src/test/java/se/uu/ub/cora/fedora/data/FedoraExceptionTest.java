@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Uppsala University Library
+ * Copyright 2021 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -18,27 +18,27 @@
  */
 package se.uu.ub.cora.fedora.data;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-
-public class FedoraReaderCursorTest {
-
-	public static final String SOME_CURSOR_TOKEN = "someCursorToken";
-	public static final String SOME_CURSOR_POSITION = "someCursor";
-
+public class FedoraExceptionTest {
 	@Test
-	public void initFedoraReaderCursor() {
-		ListSession fedoraReaderCursor = ListSession.createListSessionUsingToken(SOME_CURSOR_TOKEN);
-		assertNotNull(fedoraReaderCursor);
-		assertEquals(fedoraReaderCursor.getToken(), SOME_CURSOR_TOKEN);
+	public void testInit() {
+		String message = "message";
+		FedoraException exception = FedoraException.withMessage(message);
+		assertEquals(exception.getMessage(), "message");
+		assertTrue(exception instanceof RuntimeException);
 	}
 
 	@Test
-	public void testReadCursor() {
-		ListSession fedoraReaderCursor = ListSession.createListSessionUsingToken(SOME_CURSOR_TOKEN);
-		fedoraReaderCursor.setCursor(SOME_CURSOR_POSITION);
-		assertEquals(fedoraReaderCursor.getCursor(), SOME_CURSOR_POSITION);
+	public void testMessageAndError() throws Exception {
+		String message = "message";
+		Exception exception = new RuntimeException();
+		FedoraException storageException = FedoraException.withMessageAndException(message,
+				exception);
+		assertEquals(storageException.getMessage(), "message");
+		assertEquals(storageException.getCause(), exception);
 	}
 }

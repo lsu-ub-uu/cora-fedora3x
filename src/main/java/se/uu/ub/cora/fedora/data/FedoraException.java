@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Uppsala University Library
+ * Copyright 2021 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -16,27 +16,25 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.reader;
+package se.uu.ub.cora.fedora.data;
 
-import java.util.List;
+public class FedoraException extends RuntimeException {
+	private static final long serialVersionUID = -255261285196817577L;
 
-import se.uu.ub.cora.data.DataGroup;
+	private FedoraException(String message) {
+		super(message);
+	}
 
-public interface FedoraReader {
-	String readObject(String objectId);
+	private FedoraException(String message, Exception e) {
+		super(message, e);
+	}
 
-	List<String> readList(String type, DataGroup filter);
+	public static FedoraException withMessage(String message) {
+		return new FedoraException(message);
+	}
 
-	void setMaxResults(int count);
+	public static FedoraException withMessageAndException(String message, Exception e) {
+		return new FedoraException(message, e);
+	}
 
-	/**
-	 * readPidsForType returns a list of all pids for a given type.
-	 * <p>
-	 * If the list of pids can not
-	 * 
-	 * @param type
-	 *            A String with the type to return pids for
-	 * @return A List of Strings with the PID:s for the specified type
-	 */
-	List<String> readPidsForType(String type);
 }

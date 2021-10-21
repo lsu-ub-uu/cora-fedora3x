@@ -25,6 +25,7 @@ import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 
 public class HttpHandlerSpy2 implements HttpHandler {
 	public MethodCallRecorder MCR = new MethodCallRecorder();
+	public int returnCode = 200;
 
 	@Override
 	public void setRequestMethod(String requestMetod) {
@@ -44,9 +45,8 @@ public class HttpHandlerSpy2 implements HttpHandler {
 	@Override
 	public int getResponseCode() {
 		MCR.addCall();
-		int out = 200;
-		MCR.addReturned(out);
-		return out;
+		MCR.addReturned(returnCode);
+		return returnCode;
 	}
 
 	@Override

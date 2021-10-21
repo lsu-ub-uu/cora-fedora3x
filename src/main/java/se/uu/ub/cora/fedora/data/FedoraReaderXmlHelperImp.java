@@ -31,7 +31,7 @@ public class FedoraReaderXmlHelperImp implements FedoraReaderXmlHelper {
 	}
 
 	@Override
-	public FedoraListSession getSessionIfAvailable(String responseXML) {
+	public ListSession getSession(String responseXML) {
 		try {
 			XMLXPathParser xmlXPathParser = xmlXPathParserFactory.factor();
 			xmlXPathParser.setupToHandleResponseXML(responseXML);
@@ -41,29 +41,29 @@ public class FedoraReaderXmlHelperImp implements FedoraReaderXmlHelper {
 		}
 	}
 
-	private static FedoraListSession extractListSession(XMLXPathParser xmlxPathParser)
+	private static ListSession extractListSession(XMLXPathParser xmlxPathParser)
 			throws XMLXPathParserException {
-		FedoraListSession fedoraListSession = null;
+		ListSession fedoraListSession = ListSession.createListSessionNoMoreResults();
 		if (xmlxPathParser.hasNode("/result/listSession")) {
 			fedoraListSession = tryGetFedoraListSession(xmlxPathParser);
 		}
 		return fedoraListSession;
 	}
 
-	private static FedoraListSession tryGetFedoraListSession(XMLXPathParser xmlxPathParser)
+	private static ListSession tryGetFedoraListSession(XMLXPathParser xmlxPathParser)
 			throws XMLXPathParserException {
-		FedoraListSession fedoraListSession = getFedoraListSessionWithToken(xmlxPathParser);
+		ListSession fedoraListSession = getFedoraListSessionWithToken(xmlxPathParser);
 		String cursor = tryGetCursorFromXml(xmlxPathParser);
 		fedoraListSession.setCursor(cursor);
 		return fedoraListSession;
 	}
 
-	private static FedoraListSession getFedoraListSessionWithToken(XMLXPathParser xmlxPathParser)
+	private static ListSession getFedoraListSessionWithToken(XMLXPathParser xmlxPathParser)
 			throws XMLXPathParserException {
 		var token = xmlxPathParser
 				.getStringFromDocumentUsingXPath("/result/listSession/token/text()");
 		throwIfRequiredElementNotFound(token, "token not found in XML");
-		return new FedoraListSession(token);
+		return ListSession.createListSessionUsingToken(token);
 	}
 
 	private static void throwIfRequiredElementNotFound(String element, String message)

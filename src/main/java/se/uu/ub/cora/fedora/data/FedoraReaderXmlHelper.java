@@ -21,7 +21,7 @@ package se.uu.ub.cora.fedora.data;
 import java.util.List;
 
 public interface FedoraReaderXmlHelper {
-	FedoraListSession getSessionIfAvailable(String responseXML);
+	ListSession getSession(String responseXML);
 
 	List<String> getPidList(String responseXML);
 }

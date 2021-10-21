@@ -19,7 +19,6 @@
 package se.uu.ub.cora.fedora.reader;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 import java.util.Arrays;
@@ -37,6 +36,7 @@ import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.data.DataGroupProvider;
 import se.uu.ub.cora.dataspies.DataAtomicFactorySpy;
 import se.uu.ub.cora.dataspies.DataGroupFactorySpy;
+import se.uu.ub.cora.fedora.data.FedoraException;
 import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelperSpy;
 import se.uu.ub.cora.fedora.data.HttpHandlerFactorySpy;
 import se.uu.ub.cora.fedora.data.HttpHandlerSpy;
@@ -81,7 +81,6 @@ public class FedoraReaderTest {
 		reader = FedoraReaderImp.usingHttpHandlerFactoryAndFedoraReaderXmlHelperAndBaseUrl(
 				httpHandlerFactorySpy, fedoraReaderXmlHelperSpy, SOME_BASE_URL);
 		filter = dataGroupFactory.factorUsingNameInData("filter");
-
 	}
 
 	@Test
@@ -1032,11 +1031,7 @@ public class FedoraReaderTest {
 	public void testReadPidsForTypeOnlyOneSetOfResults() throws Exception {
 		setUpBetterSpies();
 
-		String type = "someType";
-
-		List<String> listOfPids = reader.readPidsForType(type);
-
-		assertNotNull(listOfPids);
+		List<String> listOfPids = reader.readPidsForType(SOME_TYPE);
 
 		String urlToListPids = String.format(
 				"%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
@@ -1048,9 +1043,56 @@ public class FedoraReaderTest {
 		handlerSpy.MCR.assertMethodWasCalled("getResponseCode");
 		String resultFromHttpHandler = (String) handlerSpy.MCR.getReturnValue("getResponseText", 0);
 		fedoraReaderXmlHelperSpy2.MCR.assertParameters("getPidList", 0, resultFromHttpHandler);
-		fedoraReaderXmlHelperSpy2.MCR.assertParameters("getSessionIfAvailable", 0,
-				resultFromHttpHandler);
+		fedoraReaderXmlHelperSpy2.MCR.assertParameters("getSession", 0, resultFromHttpHandler);
 		assertEquals(listOfPids, fedoraReaderXmlHelperSpy2.MCR.getReturnValue("getPidList", 0));
+
+		httpHandlerFactorySpy2.MCR.assertNumberOfCallsToMethod("factor", 1);
+	}
+
+	@Test
+	public void testReadPidsForTypeTwoSetsOfResults() throws Exception {
+		setUpBetterSpies();
+		fedoraReaderXmlHelperSpy2.noOfCallsToGetSessionsBeforeNoSession = 1;
+		List<String> listOfPids = reader.readPidsForType(SOME_TYPE);
+
+		String urlToListPids = String.format("%s/objects?resultFormat=xml&sessionToken=%s",
+				SOME_BASE_URL, "someToken1");
+
+		httpHandlerFactorySpy2.MCR.assertParameters("factor", 1, urlToListPids);
+		HttpHandlerSpy2 handlerSpy = (HttpHandlerSpy2) httpHandlerFactorySpy2.MCR
+				.getReturnValue("factor", 1);
+		handlerSpy.MCR.assertMethodWasCalled("getResponseCode");
+		String resultFromHttpHandler = (String) handlerSpy.MCR.getReturnValue("getResponseText", 0);
+		fedoraReaderXmlHelperSpy2.MCR.assertParameters("getPidList", 1, resultFromHttpHandler);
+		fedoraReaderXmlHelperSpy2.MCR.assertParameters("getSession", 1, resultFromHttpHandler);
+		List<String> expectedPids = (List<String>) fedoraReaderXmlHelperSpy2.MCR
+				.getReturnValue("getPidList", 0);
+		expectedPids.addAll(
+				(List<String>) fedoraReaderXmlHelperSpy2.MCR.getReturnValue("getPidList", 1));
+
+		assertEquals(listOfPids, expectedPids);
+		httpHandlerFactorySpy2.MCR.assertNumberOfCallsToMethod("factor", 2);
+	}
+
+	@Test
+	public void testReadPidsForTypeMoreThanOneSetOfResults() throws Exception {
+		setUpBetterSpies();
+		fedoraReaderXmlHelperSpy2.noOfCallsToGetSessionsBeforeNoSession = 5;
+		List<String> listOfPids = reader.readPidsForType(SOME_TYPE);
+
+		String urlToListPids = String.format("%s/objects?resultFormat=xml&sessionToken=%s",
+				SOME_BASE_URL, "someToken5");
+
+		httpHandlerFactorySpy2.MCR.assertParameters("factor", 5, urlToListPids);
+		HttpHandlerSpy2 handlerSpy = (HttpHandlerSpy2) httpHandlerFactorySpy2.MCR
+				.getReturnValue("factor", 5);
+		handlerSpy.MCR.assertMethodWasCalled("getResponseCode");
+		String resultFromHttpHandler = (String) handlerSpy.MCR.getReturnValue("getResponseText", 0);
+		fedoraReaderXmlHelperSpy2.MCR.assertParameters("getPidList", 5, resultFromHttpHandler);
+		fedoraReaderXmlHelperSpy2.MCR.assertParameters("getSession", 5, resultFromHttpHandler);
+
+		assertEquals(listOfPids.size(), 12);
+		httpHandlerFactorySpy2.MCR.assertNumberOfCallsToMethod("factor", 6);
 	}
 
 	public void setUpBetterSpies() {
@@ -1060,4 +1102,70 @@ public class FedoraReaderTest {
 				httpHandlerFactorySpy2, fedoraReaderXmlHelperSpy2, SOME_BASE_URL);
 	}
 
+	@Test
+	public void testThrowErrorOnProblem() throws Exception {
+		setUpBetterSpies();
+		httpHandlerFactorySpy2.throwError = true;
+
+		Exception error = readPidsForTypeAndReturnError();
+
+		assertTrue(error instanceof FedoraException);
+		assertEquals(error.getMessage(), "Error readingPids for type: " + SOME_TYPE);
+		assertEquals(error.getCause().getMessage(), "Error from HttpHandlerFactory factor");
+
+	}
+
+	@Test
+	public void testNot200AsResponse400() throws Exception {
+		setUpBetterSpies();
+		httpHandlerFactorySpy2.returnCode = new int[] { 400 };
+
+		Exception error = readPidsForTypeAndReturnError();
+		assertEquals(error.getCause().getMessage(),
+				"Error communicating with fedora, responseCode: " + 400);
+	}
+
+	private Exception readPidsForTypeAndReturnError() {
+		Exception error = null;
+		try {
+			reader.readPidsForType(SOME_TYPE);
+		} catch (Exception e) {
+			error = e;
+		}
+		return error;
+	}
+
+	@Test
+	public void testNot200AsResponse418() throws Exception {
+		setUpBetterSpies();
+		httpHandlerFactorySpy2.returnCode = new int[] { 418 };
+
+		Exception error = readPidsForTypeAndReturnError();
+
+		assertEquals(error.getCause().getMessage(),
+				"Error communicating with fedora, responseCode: " + 418);
+	}
+
+	@Test
+	public void testNot200AsResponse400WhenMoreCalls() throws Exception {
+		setUpBetterSpies();
+		fedoraReaderXmlHelperSpy2.noOfCallsToGetSessionsBeforeNoSession = 5;
+		httpHandlerFactorySpy2.returnCode = new int[] { 200, 200, 200, 400 };
+
+		Exception error = readPidsForTypeAndReturnError();
+		assertEquals(error.getCause().getMessage(),
+				"Error communicating with fedora, responseCode: " + 400);
+	}
+
+	@Test
+	public void testNot200AsResponse418WhenMoreCalls() throws Exception {
+		setUpBetterSpies();
+		fedoraReaderXmlHelperSpy2.noOfCallsToGetSessionsBeforeNoSession = 5;
+		httpHandlerFactorySpy2.returnCode = new int[] { 200, 200, 200, 418 };
+
+		Exception error = readPidsForTypeAndReturnError();
+
+		assertEquals(error.getCause().getMessage(),
+				"Error communicating with fedora, responseCode: " + 418);
+	}
 }

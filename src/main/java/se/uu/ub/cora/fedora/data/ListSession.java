@@ -18,12 +18,26 @@
  */
 package se.uu.ub.cora.fedora.data;
 
-public class FedoraListSession {
-	public final String token;
-	public String cursor;
+public class ListSession {
+	public static ListSession createListSessionUsingToken(String token) {
+		return new ListSession(token);
+	}
 
-	public FedoraListSession(String token) {
+	public static ListSession createListSessionNoMoreResults() {
+		return new ListSession();
+	}
+
+	public String token;
+	public String cursor;
+	public boolean hasMoreResults = false;
+
+	private ListSession(String token) {
 		this.token = token;
+		hasMoreResults = true;
+	}
+
+	private ListSession() {
+		hasMoreResults = false;
 	}
 
 	public String getToken() {

@@ -42,9 +42,9 @@ public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
 	}
 
 	@Override
-	public FedoraListSession getSessionIfAvailable(String xml) {
+	public ListSession getSession(String xml) {
 		MCR.addCall("xml", xml);
-		FedoraListSession fedoraReaderCursor = null;
+		ListSession listSession = ListSession.createListSessionNoMoreResults();
 		if (pidList == null) {
 			Pattern p = Pattern.compile(".+maxResults=(\\d+).+");
 			Matcher m = p.matcher(xml);
@@ -58,11 +58,11 @@ public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {
 			pidCountInStorage -= maxResults;
 		} else {
 			if (!pidList.isEmpty()) {
-				fedoraReaderCursor = new FedoraListSession("someToken");
+				listSession = ListSession.createListSessionUsingToken("someToken");
 			}
 		}
-		MCR.addReturned(fedoraReaderCursor);
-		return fedoraReaderCursor;
+		MCR.addReturned(listSession);
+		return listSession;
 	}
 
 	@Override

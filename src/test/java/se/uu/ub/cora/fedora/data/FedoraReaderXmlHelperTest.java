@@ -19,8 +19,8 @@
 package se.uu.ub.cora.fedora.data;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
 import java.io.BufferedReader;
@@ -103,11 +103,12 @@ public class FedoraReaderXmlHelperTest {
 
 	@Test
 	public void testStringGetCursorFromSomeData() {
-		var expectedCursor = new FedoraListSession("ba0a8ded8f13b71ee52155a3cbdbe34f");
+		var expectedCursor = ListSession
+				.createListSessionUsingToken("ba0a8ded8f13b71ee52155a3cbdbe34f");
 		expectedCursor.setCursor("0");
 
 		var actualCursor = fedoraReaderXmlHelper
-				.getSessionIfAvailable(xmlForThreePidAndCursorAtZero);
+				.getSession(xmlForThreePidAndCursorAtZero);
 		assertNotNull(actualCursor);
 		assertEquals(actualCursor.getToken(), expectedCursor.getToken());
 		assertEquals(actualCursor.getCursor(), expectedCursor.getCursor());
@@ -115,24 +116,24 @@ public class FedoraReaderXmlHelperTest {
 
 	@Test
 	public void testReturnNullIfCursorIsMissingFromXML() {
-		FedoraListSession cursor = fedoraReaderXmlHelper
-				.getSessionIfAvailable(xmlEmptyWithOnlyRootResultElement);
-		assertNull(cursor);
+		ListSession cursor = fedoraReaderXmlHelper
+				.getSession(xmlEmptyWithOnlyRootResultElement);
+		assertFalse(cursor.hasMoreResults);
 	}
 
 	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "malformed cursor")
 	public void testStringGetNullCursorFromXmlWithoutBrokenCursorMissingToken() {
-		fedoraReaderXmlHelper.getSessionIfAvailable(xmlWithBrokenCursorMissingToken);
+		fedoraReaderXmlHelper.getSession(xmlWithBrokenCursorMissingToken);
 	}
 
 	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "malformed cursor")
 	public void testStringGetNullCursorFromXmlWithoutBrokenCursorEmptyToken() {
-		fedoraReaderXmlHelper.getSessionIfAvailable(xmlWithBrokenCursorEmptyToken);
+		fedoraReaderXmlHelper.getSession(xmlWithBrokenCursorEmptyToken);
 	}
 
 	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "malformed cursor")
 	public void testStringGetNullCursorFromXmlWithoutBrokenCursorMissingCursor() {
-		fedoraReaderXmlHelper.getSessionIfAvailable(xmlWithBrokenCursorMissingCursor);
+		fedoraReaderXmlHelper.getSession(xmlWithBrokenCursorMissingCursor);
 	}
 
 }
