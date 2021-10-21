@@ -41,6 +41,23 @@ import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelperSpy;
 import se.uu.ub.cora.fedora.data.HttpHandlerFactorySpy;
 import se.uu.ub.cora.fedora.data.HttpHandlerSpy;
 
+// find objects with all info:
+// http://localhost:38089/fedora/objects?pid=true&label=true&state=true&ownerId=true&cDate=true
+//&mDate=true&dcmDate=true&title=true&creator=true&subject=true&description=true&publisher=true
+//&contributor=true&date=true&type=true&format=true&identifier=true&source=true&language=true
+//&relation=true&coverage=true&rights=true&maxResults=5&resultFormat=xml
+//&query=cDate%3E1900-01-01%20pid~authority-person*
+
+//find objects with pid any date:
+//http://localhost:38089/fedora/objects?pid=true&maxResults=5&resultFormat=xml&querypid~authority-person*
+
+//find objects with pid and dates after a cDate:
+//http://localhost:38089/fedora/objects?pid=true&cDate=true&mDate=true&dcmDate=true&maxResults=5
+//&resultFormat=xml&query=cDate%3E1900-01-01%20pid~authority-person*
+
+//get more objects from result using token:
+//http://localhost:38089/fedora/objects?resultFormat=xml&sessionToken=9fc9980f5192dedd01f10ef36534937c
+
 public class FedoraReaderTest {
 	private static final String SOME_TOKEN = "someToken";
 	private static final String SOME_TYPE = "someType";
@@ -1168,4 +1185,16 @@ public class FedoraReaderTest {
 		assertEquals(error.getCause().getMessage(),
 				"Error communicating with fedora, responseCode: " + 418);
 	}
+
+	@Test
+	public void testReadPidForCreateAndUpdateAfter() throws Exception {
+		setUpBetterSpies();
+		String dateTime = "yyyy-MM-ddTHH:mm:ssZ";
+		List<String> listOfPids = reader.readPidsForTypeCreatedAfter(SOME_TYPE, dateTime);
+	}
+	// readPidsForTypeCreatedAfter
+	// readPidsForTypeUpdatedAfter
+	// readPidsForTypeCreatedAndUpdatedAfter
+	// TODO:state?
+
 }

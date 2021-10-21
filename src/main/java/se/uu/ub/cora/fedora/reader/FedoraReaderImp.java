@@ -328,4 +328,10 @@ public class FedoraReaderImp implements FedoraReader {
 		possiblyAddSubsequentPidsToPidList(resultFromFedora);
 	}
 
+	@Override
+	public List<String> readPidsForTypeCreatedAfter(String someType, String dateTime) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
