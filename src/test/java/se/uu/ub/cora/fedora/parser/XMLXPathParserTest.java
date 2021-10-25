@@ -16,7 +16,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.data;
+package se.uu.ub.cora.fedora.parser;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;

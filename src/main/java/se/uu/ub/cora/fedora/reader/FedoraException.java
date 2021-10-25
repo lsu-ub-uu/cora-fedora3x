@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Uppsala University Library
+ * Copyright 2021 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -16,39 +16,25 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.data;
+package se.uu.ub.cora.fedora.reader;
 
-public class ListSession {
-	public static ListSession createListSessionUsingToken(String token) {
-		return new ListSession(token);
+public class FedoraException extends RuntimeException {
+	private static final long serialVersionUID = -255261285196817577L;
+
+	private FedoraException(String message) {
+		super(message);
 	}
 
-	public static ListSession createListSessionNoMoreResults() {
-		return new ListSession();
+	private FedoraException(String message, Exception e) {
+		super(message, e);
 	}
 
-	public String token;
-	public String cursor;
-	public boolean hasMoreResults = false;
-
-	private ListSession(String token) {
-		this.token = token;
-		hasMoreResults = true;
+	public static FedoraException withMessage(String message) {
+		return new FedoraException(message);
 	}
 
-	private ListSession() {
-		hasMoreResults = false;
+	public static FedoraException withMessageAndException(String message, Exception e) {
+		return new FedoraException(message, e);
 	}
 
-	public String getToken() {
-		return token;
-	}
-
-	public String getCursor() {
-		return cursor;
-	}
-
-	public void setCursor(String cursor) {
-		this.cursor = cursor;
-	}
 }

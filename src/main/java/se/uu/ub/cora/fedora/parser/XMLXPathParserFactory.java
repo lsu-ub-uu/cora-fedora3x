@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Uppsala University Library
+ * Copyright 2018 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -16,25 +16,8 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.data;
+package se.uu.ub.cora.fedora.parser;
 
-public class FedoraException extends RuntimeException {
-	private static final long serialVersionUID = -255261285196817577L;
-
-	private FedoraException(String message) {
-		super(message);
-	}
-
-	private FedoraException(String message, Exception e) {
-		super(message, e);
-	}
-
-	public static FedoraException withMessage(String message) {
-		return new FedoraException(message);
-	}
-
-	public static FedoraException withMessageAndException(String message, Exception e) {
-		return new FedoraException(message, e);
-	}
-
+public interface XMLXPathParserFactory {
+	XMLXPathParser factor();
 }

@@ -16,29 +16,24 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.data;
+package se.uu.ub.cora.fedora.parser;
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
-public class FedoraReaderCursorTest {
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
-	public static final String SOME_CURSOR_TOKEN = "someCursorToken";
-	public static final String SOME_CURSOR_POSITION = "someCursor";
+public class XMLXPathParserFactoryTest {
 
-	@Test
-	public void initFedoraReaderCursor() {
-		ListSession fedoraReaderCursor = ListSession.createListSessionUsingToken(SOME_CURSOR_TOKEN);
-		assertNotNull(fedoraReaderCursor);
-		assertEquals(fedoraReaderCursor.getToken(), SOME_CURSOR_TOKEN);
+	private XMLXPathParserFactory xmlxPathParserFactory;
+
+	@BeforeMethod
+	public void init() {
+		xmlxPathParserFactory = new XMLXPathParserFactoryImp();
 	}
 
 	@Test
-	public void testReadCursor() {
-		ListSession fedoraReaderCursor = ListSession.createListSessionUsingToken(SOME_CURSOR_TOKEN);
-		fedoraReaderCursor.setCursor(SOME_CURSOR_POSITION);
-		assertEquals(fedoraReaderCursor.getCursor(), SOME_CURSOR_POSITION);
+	public void testGetFXMLXPathParser() {
+		assertNotNull(xmlxPathParserFactory.factor());
 	}
 }

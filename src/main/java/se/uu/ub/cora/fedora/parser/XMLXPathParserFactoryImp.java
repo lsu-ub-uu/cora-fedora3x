@@ -16,16 +16,11 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.data;
+package se.uu.ub.cora.fedora.parser;
 
-public class XMLXPathParserException extends Exception {
-	private static final long serialVersionUID = -255261285196817577L;
-
-	public XMLXPathParserException(String message) {
-		super(message);
-	}
-
-	public XMLXPathParserException(String message, Exception e) {
-		super(message, e);
+public class XMLXPathParserFactoryImp implements XMLXPathParserFactory {
+	@Override
+	public XMLXPathParser factor() {
+		return new XMLXPathParserImp();
 	}
 }

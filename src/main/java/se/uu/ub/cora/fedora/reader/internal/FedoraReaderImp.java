@@ -16,16 +16,17 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.reader;
+package se.uu.ub.cora.fedora.reader.internal;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import se.uu.ub.cora.data.DataGroup;
-import se.uu.ub.cora.fedora.data.FedoraException;
-import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelper;
-import se.uu.ub.cora.fedora.data.ListSession;
+import se.uu.ub.cora.fedora.parser.FedoraReaderXmlHelper;
+import se.uu.ub.cora.fedora.parser.ListSession;
+import se.uu.ub.cora.fedora.reader.FedoraException;
+import se.uu.ub.cora.fedora.reader.FedoraReader;
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
@@ -33,6 +34,12 @@ public class FedoraReaderImp implements FedoraReader {
 	private static final int OK = 200;
 	private static final int NOT_FOUND = 404;
 	private static final int DEFAULT_MAX_RESULTS = 100;
+	private static final String EQUALS = "%3D";
+	private static final String LARGER_THAN = "%3E";
+	private static final String SMALLER_THAN = "%3C";
+	private static final String SPACE = "%20";
+	private static final String TILDE = "%7E";
+
 	private final HttpHandlerFactory httpHandlerFactory;
 	private final FedoraReaderXmlHelper fedoraReaderXmlHelper;
 	private final String baseUrl;
@@ -45,7 +52,7 @@ public class FedoraReaderImp implements FedoraReader {
 		return new FedoraReaderImp(httpHandlerFactory, fedoraReaderXmlHelper, baseUrl);
 	}
 
-	private FedoraReaderImp(HttpHandlerFactory httpHandlerFactory,
+	protected FedoraReaderImp(HttpHandlerFactory httpHandlerFactory,
 			FedoraReaderXmlHelper fedoraReaderXmlHelper, String baseUrl) {
 		this.httpHandlerFactory = httpHandlerFactory;
 		this.fedoraReaderXmlHelper = fedoraReaderXmlHelper;
@@ -263,48 +270,56 @@ public class FedoraReaderImp implements FedoraReader {
 				baseUrl, session.getToken(), maxResults, type);
 	}
 
-	protected String onlyForTestGetBaseUrl() {
+	public String onlyForTestGetBaseUrl() {
 		return baseUrl;
 	}
 
-	protected HttpHandlerFactory onlyForTestGetHttpHandlerFactory() {
+	public HttpHandlerFactory onlyForTestGetHttpHandlerFactory() {
 		return httpHandlerFactory;
 	}
 
-	protected FedoraReaderXmlHelper onlyForTestGetFedoraReaderXmlHelper() {
+	public FedoraReaderXmlHelper onlyForTestGetFedoraReaderXmlHelper() {
 		return fedoraReaderXmlHelper;
 	}
 
 	@Override
 	public List<String> readPidsForType(String type) {
-		pidListOut = new ArrayList<>();
 		try {
-			return tryToReadPidsForType();
+			String urlQuery = queryForActivePidsForType(type);
+			return readListOfPidsUsingUrlQuery(urlQuery);
 		} catch (Exception e) {
-			throw FedoraException.withMessageAndException("Error readingPids for type: " + type, e);
+			throw FedoraException.withMessageAndException("Error reading pids for type: " + type,
+					e);
 		}
 	}
 
-	private List<String> tryToReadPidsForType() {
-		String resultFromFedora = getFirstFedoraResponseForUrl();
+	private String queryForActivePidsForType(String type) {
+		return baseUrl + "/objects?pid=true&maxResults=" + Integer.MAX_VALUE
+				+ "&resultFormat=xml&query=state" + EQUALS + "A" + SPACE + "pid" + TILDE + type
+				+ ":*";
+	}
+
+	List<String> readListOfPidsUsingUrlQuery(String urlQuery) {
+		pidListOut = new ArrayList<>();
+		String resultFromFedora = getFirstFedoraResponseForUrl(urlQuery);
 		addPidsFromResponseToPidList(resultFromFedora);
 		possiblyAddSubsequentPidsToPidList(resultFromFedora);
 		return pidListOut;
 	}
 
-	private String getFirstFedoraResponseForUrl() {
-		String fedoraUrlForType = getFedoraUrlForType("someType", Integer.MAX_VALUE);
-		return getFedoraResponseForUrl(fedoraUrlForType);
+	private String getFirstFedoraResponseForUrl(String urlQuery) {
+
+		return getFedoraResponseForUrl(urlQuery);
 	}
 
-	private String getFedoraResponseForUrl(String listUrl) {
-		HttpHandler httpHandler = httpHandlerFactory.factor(listUrl);
+	private String getFedoraResponseForUrl(String urlQuery) {
+		HttpHandler httpHandler = httpHandlerFactory.factor(urlQuery);
 		int responseCode = httpHandler.getResponseCode();
-		if (responseCode != OK) {
-			throw new RuntimeException(
-					"Error communicating with fedora, responseCode: " + responseCode);
+		if (responseCode == OK) {
+			return httpHandler.getResponseText();
 		}
-		return httpHandler.getResponseText();
+		throw new RuntimeException(
+				"Error communicating with fedora, responseCode: " + responseCode);
 	}
 
 	private void addPidsFromResponseToPidList(String responseText) {
@@ -320,8 +335,7 @@ public class FedoraReaderImp implements FedoraReader {
 	}
 
 	private void addSubsequentPidsToPidList(ListSession session) {
-		String listUrl = String.format("%s/objects?resultFormat=xml&sessionToken=%s", baseUrl,
-				session.getToken());
+		String listUrl = baseUrl + "/objects?resultFormat=xml&sessionToken=" + session.getToken();
 
 		String resultFromFedora = getFedoraResponseForUrl(listUrl);
 		addPidsFromResponseToPidList(resultFromFedora);
@@ -329,9 +343,30 @@ public class FedoraReaderImp implements FedoraReader {
 	}
 
 	@Override
-	public List<String> readPidsForTypeCreatedAfter(String someType, String dateTime) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<String> readPidsForTypeCreatedAfter(String type, String dateTime) {
+		try {
+			String urlQuery = queryForActivePidsForType(type) + SPACE + "cDate" + LARGER_THAN
+					+ dateTime;
+			return readListOfPidsUsingUrlQuery(urlQuery);
+		} catch (Exception e) {
+			throw FedoraException
+					.withMessageAndException("Error reading pids created after for type: " + type
+							+ " and dateTime: " + dateTime, e);
+		}
+	}
+
+	@Override
+	public List<String> readPidsForTypeCreatedBeforeAndUpdatedAfter(String type, String dateTime) {
+		try {
+			String urlQuery = queryForActivePidsForType(type) + SPACE + "cDate" + SMALLER_THAN
+					+ dateTime + SPACE + "mDate" + LARGER_THAN + EQUALS + dateTime;
+			return readListOfPidsUsingUrlQuery(urlQuery);
+		} catch (Exception e) {
+			throw FedoraException.withMessageAndException(
+					"Error reading pids created before and updated after for type: " + type
+							+ " and dateTime: " + dateTime,
+					e);
+		}
 	}
 
 }

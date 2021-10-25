@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Uppsala University Library
+ * Copyright 2018, 2021 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -16,9 +16,10 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.reader;
+package se.uu.ub.cora.fedora.reader.internal;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertTrue;
 
 import java.util.Arrays;
@@ -36,10 +37,15 @@ import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.data.DataGroupProvider;
 import se.uu.ub.cora.dataspies.DataAtomicFactorySpy;
 import se.uu.ub.cora.dataspies.DataGroupFactorySpy;
-import se.uu.ub.cora.fedora.data.FedoraException;
-import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelperSpy;
-import se.uu.ub.cora.fedora.data.HttpHandlerFactorySpy;
-import se.uu.ub.cora.fedora.data.HttpHandlerSpy;
+import se.uu.ub.cora.fedora.parser.FedoraReaderXmlHelperSpy;
+import se.uu.ub.cora.fedora.parser.HttpHandlerFactorySpy;
+import se.uu.ub.cora.fedora.parser.HttpHandlerSpy;
+import se.uu.ub.cora.fedora.reader.FedoraException;
+import se.uu.ub.cora.fedora.reader.FedoraReader;
+import se.uu.ub.cora.fedora.reader.FedoraReaderXmlHelperSpy2;
+import se.uu.ub.cora.fedora.reader.HttpHandlerFactorySpy2;
+import se.uu.ub.cora.fedora.reader.HttpHandlerSpy2;
+import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 
 // find objects with all info:
 // http://localhost:38089/fedora/objects?pid=true&label=true&state=true&ownerId=true&cDate=true
@@ -49,7 +55,7 @@ import se.uu.ub.cora.fedora.data.HttpHandlerSpy;
 //&query=cDate%3E1900-01-01%20pid~authority-person*
 
 //find objects with pid any date:
-//http://localhost:38089/fedora/objects?pid=true&maxResults=5&resultFormat=xml&querypid~authority-person*
+//http://localhost:38089/fedora/objects?pid=true&maxResults=5&resultFormat=xml&query=pid~authority-person*
 
 //find objects with pid and dates after a cDate:
 //http://localhost:38089/fedora/objects?pid=true&cDate=true&mDate=true&dcmDate=true&maxResults=5
@@ -59,6 +65,7 @@ import se.uu.ub.cora.fedora.data.HttpHandlerSpy;
 //http://localhost:38089/fedora/objects?resultFormat=xml&sessionToken=9fc9980f5192dedd01f10ef36534937c
 
 public class FedoraReaderTest {
+	private static final String SOME_DATETIME = "2021-03-22T13:01:12.001Z";
 	private static final String SOME_TOKEN = "someToken";
 	private static final String SOME_TYPE = "someType";
 	private static final String SOME_OBJECT_ID = "someObjectId";
@@ -68,6 +75,11 @@ public class FedoraReaderTest {
 	private static final String SOME_PID_REQUEST_XML_RESPONSE = "someXmlPidResponse:";
 	private static final String EXPECTED_OBJECT_URL = createObjectUrlWithBaseUrlAndObjectId(
 			SOME_BASE_URL, SOME_OBJECT_ID);
+	private static final String EQUALS = "%3D";
+	private static final String SPACE = "%20";
+	private static final String TILDE = "%7E";
+	private static final String LARGER_THAN = "%3E";
+	private static final String SMALLER_THAN = "%3C";
 
 	private static final String EXPECTED_LIST_URL = String.format(
 			"%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*", SOME_BASE_URL,
@@ -1050,9 +1062,9 @@ public class FedoraReaderTest {
 
 		List<String> listOfPids = reader.readPidsForType(SOME_TYPE);
 
-		String urlToListPids = String.format(
-				"%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
-				SOME_BASE_URL, Integer.MAX_VALUE, SOME_TYPE);
+		String urlToListPids = SOME_BASE_URL + "/objects?pid=true&maxResults=" + Integer.MAX_VALUE
+				+ "&resultFormat=xml&query=state" + EQUALS + "A" + SPACE + "pid" + TILDE + SOME_TYPE
+				+ ":*";
 
 		httpHandlerFactorySpy2.MCR.assertParameters("factor", 0, urlToListPids);
 		HttpHandlerSpy2 handlerSpy = (HttpHandlerSpy2) httpHandlerFactorySpy2.MCR
@@ -1127,7 +1139,7 @@ public class FedoraReaderTest {
 		Exception error = readPidsForTypeAndReturnError();
 
 		assertTrue(error instanceof FedoraException);
-		assertEquals(error.getMessage(), "Error readingPids for type: " + SOME_TYPE);
+		assertEquals(error.getMessage(), "Error reading pids for type: " + SOME_TYPE);
 		assertEquals(error.getCause().getMessage(), "Error from HttpHandlerFactory factor");
 
 	}
@@ -1187,14 +1199,108 @@ public class FedoraReaderTest {
 	}
 
 	@Test
-	public void testReadPidForCreateAndUpdateAfter() throws Exception {
-		setUpBetterSpies();
-		String dateTime = "yyyy-MM-ddTHH:mm:ssZ";
-		List<String> listOfPids = reader.readPidsForTypeCreatedAfter(SOME_TYPE, dateTime);
-	}
-	// readPidsForTypeCreatedAfter
-	// readPidsForTypeUpdatedAfter
-	// readPidsForTypeCreatedAndUpdatedAfter
-	// TODO:state?
+	public void testReadPidForCreatedAfter() throws Exception {
+		FedoraReaderImpForTestingQueriesToFedora reader = new FedoraReaderImpForTestingQueriesToFedora(
+				SOME_BASE_URL);
 
+		List<String> listOfPids = reader.readPidsForTypeCreatedAfter(SOME_TYPE, SOME_DATETIME);
+
+		Object expectedUrl = SOME_BASE_URL + "/objects?pid=true&maxResults=" + Integer.MAX_VALUE
+				+ "&resultFormat=xml&query=state" + EQUALS + "A" + SPACE + "pid" + TILDE + SOME_TYPE
+				+ ":*" + SPACE + "cDate" + LARGER_THAN + SOME_DATETIME;
+
+		reader.MCR.assertParameters("readListOfPidsUsingUrlQuery", 0, expectedUrl);
+		reader.MCR.assertReturn("readListOfPidsUsingUrlQuery", 0, listOfPids);
+	}
+
+	@Test
+	public void testThrowErrorOnProblemReadingPidsForCreateAndUpdateAfter() throws Exception {
+		setUpBetterSpies();
+		httpHandlerFactorySpy2.throwError = true;
+
+		Exception error = readPidsForTypeCreatedAfterAndReturnError();
+
+		assertTrue(error instanceof FedoraException);
+		assertEquals(error.getMessage(), "Error reading pids created after for type: " + SOME_TYPE
+				+ " and dateTime: " + SOME_DATETIME);
+		assertEquals(error.getCause().getMessage(), "Error from HttpHandlerFactory factor");
+	}
+
+	private Exception readPidsForTypeCreatedAfterAndReturnError() {
+		Exception error = null;
+		try {
+			reader.readPidsForTypeCreatedAfter(SOME_TYPE, SOME_DATETIME);
+		} catch (Exception e) {
+			error = e;
+		}
+		return error;
+	}
+
+	@Test
+	public void testReadPidsSeveralTimesDifferentObjectList() throws Exception {
+		setUpBetterSpies();
+
+		List<String> listOfPids = reader.readPidsForTypeCreatedAfter(SOME_TYPE, SOME_DATETIME);
+		List<String> listOfPids2 = reader.readPidsForTypeCreatedAfter(SOME_TYPE, SOME_DATETIME);
+
+		assertEquals(listOfPids, listOfPids2);
+		assertNotSame(listOfPids, listOfPids2);
+	}
+
+	@Test
+	public void testReadPidsForTypeCreatedBeforeAndUpdatedAfter() throws Exception {
+		FedoraReaderImpForTestingQueriesToFedora reader = new FedoraReaderImpForTestingQueriesToFedora(
+				SOME_BASE_URL);
+
+		List<String> listOfPids = reader.readPidsForTypeCreatedBeforeAndUpdatedAfter(SOME_TYPE,
+				SOME_DATETIME);
+
+		Object expectedUrl = SOME_BASE_URL + "/objects?pid=true&maxResults=" + Integer.MAX_VALUE
+				+ "&resultFormat=xml&query=state" + EQUALS + "A" + SPACE + "pid" + TILDE + SOME_TYPE
+				+ ":*" + SPACE + "cDate" + SMALLER_THAN + SOME_DATETIME + SPACE + "mDate"
+				+ LARGER_THAN + EQUALS + SOME_DATETIME;
+
+		reader.MCR.assertParameters("readListOfPidsUsingUrlQuery", 0, expectedUrl);
+		reader.MCR.assertReturn("readListOfPidsUsingUrlQuery", 0, listOfPids);
+	}
+
+	@Test
+	public void testThrowErrorOnProblemReadingPidsForCreateBeforeAndUpdateAfter() throws Exception {
+		setUpBetterSpies();
+		httpHandlerFactorySpy2.throwError = true;
+
+		Exception error = readPidsForTypeCreatedBeforeAndUpdatedAfterAndReturnError();
+
+		assertTrue(error instanceof FedoraException);
+		assertEquals(error.getMessage(),
+				"Error reading pids created before and updated after for type: " + SOME_TYPE
+						+ " and dateTime: " + SOME_DATETIME);
+		assertEquals(error.getCause().getMessage(), "Error from HttpHandlerFactory factor");
+	}
+
+	private Exception readPidsForTypeCreatedBeforeAndUpdatedAfterAndReturnError() {
+		Exception error = null;
+		try {
+			reader.readPidsForTypeCreatedBeforeAndUpdatedAfter(SOME_TYPE, SOME_DATETIME);
+		} catch (Exception e) {
+			error = e;
+		}
+		return error;
+	}
+}
+
+class FedoraReaderImpForTestingQueriesToFedora extends FedoraReaderImp {
+	MethodCallRecorder MCR = new MethodCallRecorder();
+
+	public FedoraReaderImpForTestingQueriesToFedora(String baseUrl) {
+		super(null, null, baseUrl);
+	}
+
+	@Override
+	List<String> readListOfPidsUsingUrlQuery(String urlQuery) {
+		MCR.addCall("urlQuery", urlQuery);
+		List<String> listToReturn = List.of("someId:1", "someId:2");
+		MCR.addReturned(listToReturn);
+		return listToReturn;
+	}
 }

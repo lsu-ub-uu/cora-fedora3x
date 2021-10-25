@@ -3,8 +3,8 @@ package se.uu.ub.cora.fedora.reader;
 import java.util.ArrayList;
 import java.util.List;
 
-import se.uu.ub.cora.fedora.data.FedoraReaderXmlHelper;
-import se.uu.ub.cora.fedora.data.ListSession;
+import se.uu.ub.cora.fedora.parser.FedoraReaderXmlHelper;
+import se.uu.ub.cora.fedora.parser.ListSession;
 import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 
 public class FedoraReaderXmlHelperSpy2 implements FedoraReaderXmlHelper {

@@ -16,8 +16,13 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.data;
+package se.uu.ub.cora.fedora.parser;
 
-public interface XMLXPathParserFactory {
-	XMLXPathParser factor();
+import org.testng.annotations.Test;
+
+public class XMLXPathParserExceptionTest {
+	@Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "bob")
+	public void testThrow() throws XMLXPathParserException {
+		throw new XMLXPathParserException("bob");
+	}
 }

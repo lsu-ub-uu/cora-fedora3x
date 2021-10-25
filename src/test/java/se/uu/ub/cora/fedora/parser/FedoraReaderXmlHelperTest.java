@@ -16,7 +16,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.data;
+package se.uu.ub.cora.fedora.parser;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -107,8 +107,7 @@ public class FedoraReaderXmlHelperTest {
 				.createListSessionUsingToken("ba0a8ded8f13b71ee52155a3cbdbe34f");
 		expectedCursor.setCursor("0");
 
-		var actualCursor = fedoraReaderXmlHelper
-				.getSession(xmlForThreePidAndCursorAtZero);
+		var actualCursor = fedoraReaderXmlHelper.getSession(xmlForThreePidAndCursorAtZero);
 		assertNotNull(actualCursor);
 		assertEquals(actualCursor.getToken(), expectedCursor.getToken());
 		assertEquals(actualCursor.getCursor(), expectedCursor.getCursor());
@@ -116,8 +115,7 @@ public class FedoraReaderXmlHelperTest {
 
 	@Test
 	public void testReturnNullIfCursorIsMissingFromXML() {
-		ListSession cursor = fedoraReaderXmlHelper
-				.getSession(xmlEmptyWithOnlyRootResultElement);
+		ListSession cursor = fedoraReaderXmlHelper.getSession(xmlEmptyWithOnlyRootResultElement);
 		assertFalse(cursor.hasMoreResults);
 	}
 

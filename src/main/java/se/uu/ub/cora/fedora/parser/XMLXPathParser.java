@@ -16,13 +16,20 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.data;
+package se.uu.ub.cora.fedora.parser;
 
-import org.testng.annotations.Test;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
-public class XMLXPathParserExceptionTest {
-	@Test(expectedExceptions = XMLXPathParserException.class, expectedExceptionsMessageRegExp = "bob")
-	public void testThrow() throws XMLXPathParserException {
-		throw new XMLXPathParserException("bob");
-	}
+public interface XMLXPathParser {
+	void setupToHandleResponseXML(String xml) throws XMLXPathParserException;
+
+	boolean hasNode(String xPath) throws XMLXPathParserException;
+
+	String getStringFromDocumentUsingXPath(String xpathString) throws XMLXPathParserException;
+
+	String getStringFromNodeUsingXPath(Node node, String xpathString)
+			throws XMLXPathParserException;
+
+	NodeList getNodeListFromDocumentUsingXPath(String xpathString) throws XMLXPathParserException;
 }

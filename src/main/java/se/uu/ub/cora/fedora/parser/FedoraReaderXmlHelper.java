@@ -16,23 +16,12 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.data;
+package se.uu.ub.cora.fedora.parser;
 
-public class XMLXPathParserFactorySpy implements XMLXPathParserFactory {
-	public XMLXPathParserSpy parserSpy;
-	public FedoraReaderXmlHelperSpy helperSpy;
+import java.util.List;
 
-	public int factorCallCount = 0;
-	public int factorHelperCallCount = 0;
+public interface FedoraReaderXmlHelper {
+	ListSession getSession(String responseXML);
 
-	public XMLXPathParserFactorySpy() {
-		parserSpy = new XMLXPathParserSpy();
-		helperSpy = new FedoraReaderXmlHelperSpy();
-	}
-
-	@Override
-	public XMLXPathParser factor() {
-		factorCallCount++;
-		return parserSpy;
-	}
+	List<String> getPidList(String responseXML);
 }

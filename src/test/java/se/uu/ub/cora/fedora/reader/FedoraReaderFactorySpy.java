@@ -18,9 +18,6 @@
  */
 package se.uu.ub.cora.fedora.reader;
 
-import se.uu.ub.cora.fedora.reader.FedoraReader;
-import se.uu.ub.cora.fedora.reader.FedoraReaderFactory;
-
 public class FedoraReaderFactorySpy implements FedoraReaderFactory {
 	@Override
 	public FedoraReader factor(String baseUrl) {
