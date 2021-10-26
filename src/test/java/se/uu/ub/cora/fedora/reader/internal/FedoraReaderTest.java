@@ -1287,6 +1287,44 @@ public class FedoraReaderTest {
 		}
 		return error;
 	}
+
+	@Test
+	public void testReadPidsForTypeDeletedAfter() throws Exception {
+		FedoraReaderImpForTestingQueriesToFedora reader = new FedoraReaderImpForTestingQueriesToFedora(
+				SOME_BASE_URL);
+
+		List<String> listOfPids = reader.readPidsForTypeDeletedAfter(SOME_TYPE, SOME_DATETIME);
+
+		Object expectedUrl = SOME_BASE_URL + "/objects?pid=true&maxResults=" + Integer.MAX_VALUE
+				+ "&resultFormat=xml&query=state" + EQUALS + "D" + SPACE + "pid" + TILDE + SOME_TYPE
+				+ ":*" + SPACE + "mDate" + LARGER_THAN + EQUALS + SOME_DATETIME;
+
+		reader.MCR.assertParameters("readListOfPidsUsingUrlQuery", 0, expectedUrl);
+		reader.MCR.assertReturn("readListOfPidsUsingUrlQuery", 0, listOfPids);
+	}
+
+	@Test
+	public void testThrowErrorOnProblemReadingPidsForDeleteAfter() throws Exception {
+		setUpBetterSpies();
+		httpHandlerFactorySpy2.throwError = true;
+
+		Exception error = readPidsForTypeDeletedAfterAndReturnError();
+
+		assertTrue(error instanceof FedoraException);
+		assertEquals(error.getMessage(), "Error reading pids deleted after for type: " + SOME_TYPE
+				+ " and dateTime: " + SOME_DATETIME);
+		assertEquals(error.getCause().getMessage(), "Error from HttpHandlerFactory factor");
+	}
+
+	private Exception readPidsForTypeDeletedAfterAndReturnError() {
+		Exception error = null;
+		try {
+			reader.readPidsForTypeDeletedAfter(SOME_TYPE, SOME_DATETIME);
+		} catch (Exception e) {
+			error = e;
+		}
+		return error;
+	}
 }
 
 class FedoraReaderImpForTestingQueriesToFedora extends FedoraReaderImp {

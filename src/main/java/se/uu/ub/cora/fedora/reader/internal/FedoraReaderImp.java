@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Uppsala University Library
+ * Copyright 2018, 202 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -294,8 +294,12 @@ public class FedoraReaderImp implements FedoraReader {
 	}
 
 	private String queryForActivePidsForType(String type) {
+		return queryForPidsForTypeAndState(type, "A");
+	}
+
+	private String queryForPidsForTypeAndState(String type, String state) {
 		return baseUrl + "/objects?pid=true&maxResults=" + Integer.MAX_VALUE
-				+ "&resultFormat=xml&query=state" + EQUALS + "A" + SPACE + "pid" + TILDE + type
+				+ "&resultFormat=xml&query=state" + EQUALS + state + SPACE + "pid" + TILDE + type
 				+ ":*";
 	}
 
@@ -369,4 +373,21 @@ public class FedoraReaderImp implements FedoraReader {
 		}
 	}
 
+	@Override
+	public List<String> readPidsForTypeDeletedAfter(String type, String dateTime) {
+		try {
+			String urlQuery = queryForDeletedPidsForType(type) + SPACE + "mDate" + LARGER_THAN
+					+ EQUALS + dateTime;
+			return readListOfPidsUsingUrlQuery(urlQuery);
+		} catch (Exception e) {
+			throw FedoraException
+					.withMessageAndException("Error reading pids deleted after for type: " + type
+							+ " and dateTime: " + dateTime, e);
+		}
+
+	}
+
+	private String queryForDeletedPidsForType(String type) {
+		return queryForPidsForTypeAndState(type, "D");
+	}
 }
