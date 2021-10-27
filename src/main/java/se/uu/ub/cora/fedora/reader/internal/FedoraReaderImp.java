@@ -71,7 +71,7 @@ public class FedoraReaderImp implements FedoraReader {
 	}
 
 	private String getURLForFedoraObject(String objectId) {
-		return String.format("%s/objects/%s/datastreams/METADATA/content", baseUrl, objectId);
+		return String.format("%sobjects/%s/datastreams/METADATA/content", baseUrl, objectId);
 	}
 
 	private String getResponseFromFedora(String id, String listUrl) {
@@ -131,7 +131,7 @@ public class FedoraReaderImp implements FedoraReader {
 	}
 
 	private String getFedoraUrlForType(String type, int maxResults) {
-		return String.format("%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
+		return String.format("%sobjects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
 				baseUrl, maxResults, type);
 	}
 
@@ -266,7 +266,7 @@ public class FedoraReaderImp implements FedoraReader {
 
 	private String getFedoraSessionUrlForType(String type, int maxResults, ListSession session) {
 		return String.format(
-				"%s/objects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
+				"%sobjects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
 				baseUrl, session.getToken(), maxResults, type);
 	}
 
@@ -298,7 +298,7 @@ public class FedoraReaderImp implements FedoraReader {
 	}
 
 	private String queryForPidsForTypeAndState(String type, String state) {
-		return baseUrl + "/objects?pid=true&maxResults=" + Integer.MAX_VALUE
+		return baseUrl + "objects?pid=true&maxResults=" + Integer.MAX_VALUE
 				+ "&resultFormat=xml&query=state" + EQUALS + state + SPACE + "pid" + TILDE + type
 				+ ":*";
 	}
@@ -339,7 +339,7 @@ public class FedoraReaderImp implements FedoraReader {
 	}
 
 	private void addSubsequentPidsToPidList(ListSession session) {
-		String listUrl = baseUrl + "/objects?resultFormat=xml&sessionToken=" + session.getToken();
+		String listUrl = baseUrl + "objects?resultFormat=xml&sessionToken=" + session.getToken();
 
 		String resultFromFedora = getFedoraResponseForUrl(listUrl);
 		addPidsFromResponseToPidList(resultFromFedora);

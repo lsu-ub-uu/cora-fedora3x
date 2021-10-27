@@ -70,7 +70,7 @@ public class FedoraReaderTest {
 	private static final String SOME_TYPE = "someType";
 	private static final String SOME_OBJECT_ID = "someObjectId";
 	private static final int DEFAULT_MAX_RESULTS = 100;
-	private static final String SOME_BASE_URL = "someBaseUrl";
+	private static final String SOME_BASE_URL = "someBaseUrl/";
 	private static final String SOME_TYPE_REQUEST_XML_RESPONSE = "someXmlTypeResponse:";
 	private static final String SOME_PID_REQUEST_XML_RESPONSE = "someXmlPidResponse:";
 	private static final String EXPECTED_OBJECT_URL = createObjectUrlWithBaseUrlAndObjectId(
@@ -82,7 +82,7 @@ public class FedoraReaderTest {
 	private static final String SMALLER_THAN = "%3C";
 
 	private static final String EXPECTED_LIST_URL = String.format(
-			"%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*", SOME_BASE_URL,
+			"%sobjects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*", SOME_BASE_URL,
 			DEFAULT_MAX_RESULTS, SOME_TYPE);
 	private DataGroup EMPTY_FILTER;
 	private HttpHandlerFactorySpy httpHandlerFactorySpy;
@@ -135,7 +135,7 @@ public class FedoraReaderTest {
 	}
 
 	private static String createObjectUrlWithBaseUrlAndObjectId(String baseUrl, String objectId) {
-		return String.format("%s/objects/%s/datastreams/METADATA/content", baseUrl, objectId);
+		return String.format("%sobjects/%s/datastreams/METADATA/content", baseUrl, objectId);
 	}
 
 	@Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = ""
@@ -216,7 +216,7 @@ public class FedoraReaderTest {
 	@Test
 	public void testReadingListWithCustomMaxResults() {
 		String expectedUrl = String.format(
-				"%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
+				"%sobjects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
 				SOME_BASE_URL, 123, SOME_TYPE);
 		reader.setMaxResults(123);
 		var results = reader.readList(SOME_TYPE, EMPTY_FILTER);
@@ -306,7 +306,7 @@ public class FedoraReaderTest {
 	}
 
 	private String expectedListUrl(String type, int maxResults) {
-		return String.format("%s/objects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
+		return String.format("%sobjects?pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
 				SOME_BASE_URL, maxResults, type);
 	}
 
@@ -378,7 +378,7 @@ public class FedoraReaderTest {
 
 	private String expectedListUrlWithCursor(int maxResults) {
 		return String.format(
-				"%s/objects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
+				"%sobjects?sessionToken=%s&pid=true&maxResults=%d&resultFormat=xml&query=pid%%7E%s:*",
 				SOME_BASE_URL, FedoraReaderTest.SOME_TOKEN, maxResults, FedoraReaderTest.SOME_TYPE);
 	}
 
@@ -608,7 +608,7 @@ public class FedoraReaderTest {
 	}
 
 	private String expectedObjectUrl(String pid) {
-		return String.format("%s/objects/%s/datastreams/METADATA/content", SOME_BASE_URL, pid);
+		return String.format("%sobjects/%s/datastreams/METADATA/content", SOME_BASE_URL, pid);
 	}
 
 	private String expectedListUrlWithCursor() {
@@ -1062,7 +1062,7 @@ public class FedoraReaderTest {
 
 		List<String> listOfPids = reader.readPidsForType(SOME_TYPE);
 
-		String urlToListPids = SOME_BASE_URL + "/objects?pid=true&maxResults=" + Integer.MAX_VALUE
+		String urlToListPids = SOME_BASE_URL + "objects?pid=true&maxResults=" + Integer.MAX_VALUE
 				+ "&resultFormat=xml&query=state" + EQUALS + "A" + SPACE + "pid" + TILDE + SOME_TYPE
 				+ ":*";
 
@@ -1084,7 +1084,7 @@ public class FedoraReaderTest {
 		fedoraReaderXmlHelperSpy2.noOfCallsToGetSessionsBeforeNoSession = 1;
 		List<String> listOfPids = reader.readPidsForType(SOME_TYPE);
 
-		String urlToListPids = String.format("%s/objects?resultFormat=xml&sessionToken=%s",
+		String urlToListPids = String.format("%sobjects?resultFormat=xml&sessionToken=%s",
 				SOME_BASE_URL, "someToken1");
 
 		httpHandlerFactorySpy2.MCR.assertParameters("factor", 1, urlToListPids);
@@ -1109,7 +1109,7 @@ public class FedoraReaderTest {
 		fedoraReaderXmlHelperSpy2.noOfCallsToGetSessionsBeforeNoSession = 5;
 		List<String> listOfPids = reader.readPidsForType(SOME_TYPE);
 
-		String urlToListPids = String.format("%s/objects?resultFormat=xml&sessionToken=%s",
+		String urlToListPids = String.format("%sobjects?resultFormat=xml&sessionToken=%s",
 				SOME_BASE_URL, "someToken5");
 
 		httpHandlerFactorySpy2.MCR.assertParameters("factor", 5, urlToListPids);
@@ -1205,7 +1205,7 @@ public class FedoraReaderTest {
 
 		List<String> listOfPids = reader.readPidsForTypeCreatedAfter(SOME_TYPE, SOME_DATETIME);
 
-		Object expectedUrl = SOME_BASE_URL + "/objects?pid=true&maxResults=" + Integer.MAX_VALUE
+		Object expectedUrl = SOME_BASE_URL + "objects?pid=true&maxResults=" + Integer.MAX_VALUE
 				+ "&resultFormat=xml&query=state" + EQUALS + "A" + SPACE + "pid" + TILDE + SOME_TYPE
 				+ ":*" + SPACE + "cDate" + LARGER_THAN + SOME_DATETIME;
 
@@ -1255,7 +1255,7 @@ public class FedoraReaderTest {
 		List<String> listOfPids = reader.readPidsForTypeCreatedBeforeAndUpdatedAfter(SOME_TYPE,
 				SOME_DATETIME);
 
-		Object expectedUrl = SOME_BASE_URL + "/objects?pid=true&maxResults=" + Integer.MAX_VALUE
+		Object expectedUrl = SOME_BASE_URL + "objects?pid=true&maxResults=" + Integer.MAX_VALUE
 				+ "&resultFormat=xml&query=state" + EQUALS + "A" + SPACE + "pid" + TILDE + SOME_TYPE
 				+ ":*" + SPACE + "cDate" + SMALLER_THAN + SOME_DATETIME + SPACE + "mDate"
 				+ LARGER_THAN + EQUALS + SOME_DATETIME;
@@ -1295,7 +1295,7 @@ public class FedoraReaderTest {
 
 		List<String> listOfPids = reader.readPidsForTypeDeletedAfter(SOME_TYPE, SOME_DATETIME);
 
-		Object expectedUrl = SOME_BASE_URL + "/objects?pid=true&maxResults=" + Integer.MAX_VALUE
+		Object expectedUrl = SOME_BASE_URL + "objects?pid=true&maxResults=" + Integer.MAX_VALUE
 				+ "&resultFormat=xml&query=state" + EQUALS + "D" + SPACE + "pid" + TILDE + SOME_TYPE
 				+ ":*" + SPACE + "mDate" + LARGER_THAN + EQUALS + SOME_DATETIME;
 
