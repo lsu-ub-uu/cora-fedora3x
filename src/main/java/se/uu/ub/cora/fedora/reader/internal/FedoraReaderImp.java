@@ -18,6 +18,7 @@
  */
 package se.uu.ub.cora.fedora.reader.internal;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -353,9 +354,9 @@ public class FedoraReaderImp implements FedoraReader {
 					+ dateTime;
 			return readListOfPidsUsingUrlQuery(urlQuery);
 		} catch (Exception e) {
+			String logM = "Error reading pids created after for type: {0} and dateTime: {1}";
 			throw FedoraException
-					.withMessageAndException("Error reading pids created after for type: " + type
-							+ " and dateTime: " + dateTime, e);
+					.withMessageAndException(MessageFormat.format(logM, type, dateTime), e);
 		}
 	}
 
@@ -366,10 +367,10 @@ public class FedoraReaderImp implements FedoraReader {
 					+ dateTime + SPACE + "mDate" + LARGER_THAN + EQUALS + dateTime;
 			return readListOfPidsUsingUrlQuery(urlQuery);
 		} catch (Exception e) {
-			throw FedoraException.withMessageAndException(
-					"Error reading pids created before and updated after for type: " + type
-							+ " and dateTime: " + dateTime,
-					e);
+			String logM = "Error reading pids created before and updated after for type: {0} "
+					+ "and dateTime: {1}";
+			throw FedoraException
+					.withMessageAndException(MessageFormat.format(logM, type, dateTime), e);
 		}
 	}
 
@@ -380,9 +381,9 @@ public class FedoraReaderImp implements FedoraReader {
 					+ EQUALS + dateTime;
 			return readListOfPidsUsingUrlQuery(urlQuery);
 		} catch (Exception e) {
+			String logM = "Error reading pids deleted after for type: {0} and dateTime: {1}";
 			throw FedoraException
-					.withMessageAndException("Error reading pids deleted after for type: " + type
-							+ " and dateTime: " + dateTime, e);
+					.withMessageAndException(MessageFormat.format(logM, type, dateTime), e);
 		}
 
 	}
