@@ -96,7 +96,7 @@ public class FedoraReaderTest {
 	private FedoraReaderXmlHelperSpy2 fedoraReaderXmlHelperSpy2;
 
 	@BeforeMethod
-	void init() {
+	public void init() {
 		dataGroupFactory = new DataGroupFactorySpy();
 		DataGroupProvider.setDataGroupFactory(dataGroupFactory);
 		dataAtomicFactory = new DataAtomicFactorySpy();
