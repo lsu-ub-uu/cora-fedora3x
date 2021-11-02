@@ -31,10 +31,10 @@
     <name>Fedora Converter</name>
 
     <properties>
-		<httphandler.version>2.3.0</httphandler.version>
-        <coradata.version>5.1.0</coradata.version>
-        <json.version>2.5.0</json.version>
-        <testutils.version>1.2-SNAPSHOT</testutils.version>
+		<httphandler.version>2.4.0</httphandler.version>
+        <coradata.version>5.2.0</coradata.version>
+        <json.version>3.0.0</json.version>
+        <testutils.version>1.2.0</testutils.version>
     </properties>
 
     <scm>
