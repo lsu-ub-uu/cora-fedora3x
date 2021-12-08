@@ -61,6 +61,10 @@ import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 //http://localhost:38089/fedora/objects?pid=true&cDate=true&mDate=true&dcmDate=true&maxResults=5
 //&resultFormat=xml&query=cDate%3E1900-01-01%20pid~authority-person*
 
+//find objects with pid and dates after a mDate:
+//http://localhost:38089/fedora/objects?pid=true&cDate=true&mDate=true&dcmDate=true&maxResults=5
+//&resultFormat=xml&query=mDate%3E1900-01-01%20pid~authority-person*
+
 //get more objects from result using token:
 //http://localhost:38089/fedora/objects?resultFormat=xml&sessionToken=9fc9980f5192dedd01f10ef36534937c
 
@@ -1282,6 +1286,44 @@ public class FedoraReaderTest {
 		Exception error = null;
 		try {
 			reader.readPidsForTypeCreatedBeforeAndUpdatedAfter(SOME_TYPE, SOME_DATETIME);
+		} catch (Exception e) {
+			error = e;
+		}
+		return error;
+	}
+
+	@Test
+	public void testReadPidsForTypeUpdatedAfter() throws Exception {
+		FedoraReaderImpForTestingQueriesToFedora reader = new FedoraReaderImpForTestingQueriesToFedora(
+				SOME_BASE_URL);
+
+		List<String> listOfPids = reader.readPidsForTypeUpdatedAfter(SOME_TYPE, SOME_DATETIME);
+
+		Object expectedUrl = SOME_BASE_URL + "objects?pid=true&maxResults=" + Integer.MAX_VALUE
+				+ "&resultFormat=xml&query=state" + EQUALS + "A" + SPACE + "pid" + TILDE + SOME_TYPE
+				+ ":*" + SPACE + "mDate" + LARGER_THAN + SOME_DATETIME;
+
+		reader.MCR.assertParameters("readListOfPidsUsingUrlQuery", 0, expectedUrl);
+		reader.MCR.assertReturn("readListOfPidsUsingUrlQuery", 0, listOfPids);
+	}
+
+	@Test
+	public void testThrowErrorOnProblemReadingPidsForUpdateAfter() throws Exception {
+		setUpBetterSpies();
+		httpHandlerFactorySpy2.throwError = true;
+
+		Exception error = readPidsForTypeUpdatedAfterAndReturnError();
+
+		assertTrue(error instanceof FedoraException);
+		assertEquals(error.getMessage(), "Error reading pids updated after for type: " + SOME_TYPE
+				+ " and dateTime: " + SOME_DATETIME);
+		assertEquals(error.getCause().getMessage(), "Error from HttpHandlerFactory factor");
+	}
+
+	private Exception readPidsForTypeUpdatedAfterAndReturnError() {
+		Exception error = null;
+		try {
+			reader.readPidsForTypeUpdatedAfter(SOME_TYPE, SOME_DATETIME);
 		} catch (Exception e) {
 			error = e;
 		}

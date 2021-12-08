@@ -80,6 +80,21 @@ public interface FedoraReader {
 	List<String> readPidsForTypeCreatedBeforeAndUpdatedAfter(String type, String dateTime);
 
 	/**
+	 * readPidsForTypeUpdatedAfter returns a list of all pids for a given type that has fedora state
+	 * A (Active) and that are updated after the specified dateTime.
+	 * <p>
+	 * If the list of pids can not be read SHOULD a {@link FedoraException} be thrown indicating
+	 * what went wrong.
+	 * 
+	 * @param type
+	 *            A String with the type to return pids for
+	 * @param dateTime
+	 *            A String on the format yyyy-MM-ddTHH:mm:ssZ
+	 * @return A List of Strings with the PID:s for the specified type
+	 */
+	List<String> readPidsForTypeUpdatedAfter(String type, String dateTime);
+
+	/**
 	 * readPidsForTypeDeletedAfter returns a list of all pids for a given type that has fedora state
 	 * D (Deleted) and that are updated after the specified dateTime.
 	 * <p>

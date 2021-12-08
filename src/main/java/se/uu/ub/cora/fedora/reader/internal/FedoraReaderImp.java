@@ -32,6 +32,8 @@ import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 
 public class FedoraReaderImp implements FedoraReader {
+	private static final String CREATED_DATE = "cDate";
+	private static final String MODIFIED_DATE = "mDate";
 	private static final int OK = 200;
 	private static final int NOT_FOUND = 404;
 	private static final int DEFAULT_MAX_RESULTS = 100;
@@ -350,7 +352,7 @@ public class FedoraReaderImp implements FedoraReader {
 	@Override
 	public List<String> readPidsForTypeCreatedAfter(String type, String dateTime) {
 		try {
-			String urlQuery = queryForActivePidsForType(type) + SPACE + "cDate" + LARGER_THAN
+			String urlQuery = queryForActivePidsForType(type) + SPACE + CREATED_DATE + LARGER_THAN
 					+ dateTime;
 			return readListOfPidsUsingUrlQuery(urlQuery);
 		} catch (Exception e) {
@@ -361,10 +363,23 @@ public class FedoraReaderImp implements FedoraReader {
 	}
 
 	@Override
+	public List<String> readPidsForTypeUpdatedAfter(String type, String dateTime) {
+		try {
+			String urlQuery = queryForActivePidsForType(type) + SPACE + MODIFIED_DATE + LARGER_THAN
+					+ dateTime;
+			return readListOfPidsUsingUrlQuery(urlQuery);
+		} catch (Exception e) {
+			String logM = "Error reading pids updated after for type: {0} and dateTime: {1}";
+			throw FedoraException
+					.withMessageAndException(MessageFormat.format(logM, type, dateTime), e);
+		}
+	}
+
+	@Override
 	public List<String> readPidsForTypeCreatedBeforeAndUpdatedAfter(String type, String dateTime) {
 		try {
-			String urlQuery = queryForActivePidsForType(type) + SPACE + "cDate" + SMALLER_THAN
-					+ dateTime + SPACE + "mDate" + LARGER_THAN + EQUALS + dateTime;
+			String urlQuery = queryForActivePidsForType(type) + SPACE + CREATED_DATE + SMALLER_THAN
+					+ dateTime + SPACE + MODIFIED_DATE + LARGER_THAN + EQUALS + dateTime;
 			return readListOfPidsUsingUrlQuery(urlQuery);
 		} catch (Exception e) {
 			String logM = "Error reading pids created before and updated after for type: {0} "
@@ -377,7 +392,7 @@ public class FedoraReaderImp implements FedoraReader {
 	@Override
 	public List<String> readPidsForTypeDeletedAfter(String type, String dateTime) {
 		try {
-			String urlQuery = queryForDeletedPidsForType(type) + SPACE + "mDate" + LARGER_THAN
+			String urlQuery = queryForDeletedPidsForType(type) + SPACE + MODIFIED_DATE + LARGER_THAN
 					+ EQUALS + dateTime;
 			return readListOfPidsUsingUrlQuery(urlQuery);
 		} catch (Exception e) {
@@ -391,4 +406,5 @@ public class FedoraReaderImp implements FedoraReader {
 	private String queryForDeletedPidsForType(String type) {
 		return queryForPidsForTypeAndState(type, "D");
 	}
+
 }
