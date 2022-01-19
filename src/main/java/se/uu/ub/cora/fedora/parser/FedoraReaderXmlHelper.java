@@ -20,6 +20,8 @@ package se.uu.ub.cora.fedora.parser;
 
 import java.util.List;
 
+import se.uu.ub.cora.fedora.parser.internal.ListSession;
+
 public interface FedoraReaderXmlHelper {
 	ListSession getSession(String responseXML);
 

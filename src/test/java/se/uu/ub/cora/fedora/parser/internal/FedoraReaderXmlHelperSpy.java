@@ -16,13 +16,14 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.parser;
+package se.uu.ub.cora.fedora.parser.internal;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import se.uu.ub.cora.fedora.parser.FedoraReaderXmlHelper;
 import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 
 public class FedoraReaderXmlHelperSpy implements FedoraReaderXmlHelper {

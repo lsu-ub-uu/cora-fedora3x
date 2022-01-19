@@ -16,23 +16,27 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.parser;
+package se.uu.ub.cora.fedora.parser.internal;
 
-public class XMLXPathParserFactorySpy implements XMLXPathParserFactory {
-	public XMLXPathParserSpy parserSpy;
-	public FedoraReaderXmlHelperSpy helperSpy;
+import static org.testng.Assert.assertNotNull;
 
-	public int factorCallCount = 0;
-	public int factorHelperCallCount = 0;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
-	public XMLXPathParserFactorySpy() {
-		parserSpy = new XMLXPathParserSpy();
-		helperSpy = new FedoraReaderXmlHelperSpy();
+import se.uu.ub.cora.fedora.parser.XMLXPathParserFactory;
+import se.uu.ub.cora.fedora.parser.internal.XMLXPathParserFactoryImp;
+
+public class XMLXPathParserFactoryTest {
+
+	private XMLXPathParserFactory xmlxPathParserFactory;
+
+	@BeforeMethod
+	public void init() {
+		xmlxPathParserFactory = new XMLXPathParserFactoryImp();
 	}
 
-	@Override
-	public XMLXPathParser factor() {
-		factorCallCount++;
-		return parserSpy;
+	@Test
+	public void testGetFXMLXPathParser() {
+		assertNotNull(xmlxPathParserFactory.factor());
 	}
 }

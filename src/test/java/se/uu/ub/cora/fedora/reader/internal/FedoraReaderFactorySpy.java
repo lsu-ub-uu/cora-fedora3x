@@ -16,24 +16,14 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.parser;
+package se.uu.ub.cora.fedora.reader.internal;
 
-import static org.testng.Assert.assertNotNull;
+import se.uu.ub.cora.fedora.reader.FedoraReader;
+import se.uu.ub.cora.fedora.reader.FedoraReaderFactory;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-public class XMLXPathParserFactoryTest {
-
-	private XMLXPathParserFactory xmlxPathParserFactory;
-
-	@BeforeMethod
-	public void init() {
-		xmlxPathParserFactory = new XMLXPathParserFactoryImp();
-	}
-
-	@Test
-	public void testGetFXMLXPathParser() {
-		assertNotNull(xmlxPathParserFactory.factor());
+public class FedoraReaderFactorySpy implements FedoraReaderFactory {
+	@Override
+	public FedoraReader factor(String baseUrl) {
+		return null;
 	}
 }

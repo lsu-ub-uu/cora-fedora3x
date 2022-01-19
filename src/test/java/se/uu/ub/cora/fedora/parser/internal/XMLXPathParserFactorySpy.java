@@ -16,39 +16,26 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.parser;
+package se.uu.ub.cora.fedora.parser.internal;
 
-public class ListSession {
-	public static ListSession createListSessionUsingToken(String token) {
-		return new ListSession(token);
+import se.uu.ub.cora.fedora.parser.XMLXPathParser;
+import se.uu.ub.cora.fedora.parser.XMLXPathParserFactory;
+
+public class XMLXPathParserFactorySpy implements XMLXPathParserFactory {
+	public XMLXPathParserSpy parserSpy;
+	public FedoraReaderXmlHelperSpy helperSpy;
+
+	public int factorCallCount = 0;
+	public int factorHelperCallCount = 0;
+
+	public XMLXPathParserFactorySpy() {
+		parserSpy = new XMLXPathParserSpy();
+		helperSpy = new FedoraReaderXmlHelperSpy();
 	}
 
-	public static ListSession createListSessionNoMoreResults() {
-		return new ListSession();
-	}
-
-	public String token;
-	public String cursor;
-	public boolean hasMoreResults = false;
-
-	private ListSession(String token) {
-		this.token = token;
-		hasMoreResults = true;
-	}
-
-	private ListSession() {
-		hasMoreResults = false;
-	}
-
-	public String getToken() {
-		return token;
-	}
-
-	public String getCursor() {
-		return cursor;
-	}
-
-	public void setCursor(String cursor) {
-		this.cursor = cursor;
+	@Override
+	public XMLXPathParser factor() {
+		factorCallCount++;
+		return parserSpy;
 	}
 }

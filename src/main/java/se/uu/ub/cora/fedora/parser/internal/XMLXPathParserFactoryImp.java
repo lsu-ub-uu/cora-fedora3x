@@ -16,11 +16,14 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.reader;
+package se.uu.ub.cora.fedora.parser.internal;
 
-public class FedoraReaderFactorySpy implements FedoraReaderFactory {
+import se.uu.ub.cora.fedora.parser.XMLXPathParser;
+import se.uu.ub.cora.fedora.parser.XMLXPathParserFactory;
+
+public class XMLXPathParserFactoryImp implements XMLXPathParserFactory {
 	@Override
-	public FedoraReader factor(String baseUrl) {
-		return null;
+	public XMLXPathParser factor() {
+		return new XMLXPathParserImp();
 	}
 }

@@ -1,4 +1,4 @@
-package se.uu.ub.cora.fedora.reader;
+package se.uu.ub.cora.fedora.reader.internal;
 
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;

@@ -16,13 +16,16 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.parser;
+package se.uu.ub.cora.fedora.parser.internal;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import se.uu.ub.cora.fedora.parser.XMLXPathParser;
+import se.uu.ub.cora.fedora.parser.XMLXPathParserException;
 
 public class XMLXPathParserSpy implements XMLXPathParser {
 	public Map<String, Boolean> validXml;

@@ -16,7 +16,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.reader;
+package se.uu.ub.cora.fedora.reader.internal;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
@@ -25,9 +25,11 @@ import static org.testng.Assert.assertTrue;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import se.uu.ub.cora.fedora.parser.FedoraReaderXmlHelperImp;
 import se.uu.ub.cora.fedora.parser.XMLXPathParserFactory;
-import se.uu.ub.cora.fedora.parser.XMLXPathParserFactoryImp;
+import se.uu.ub.cora.fedora.parser.internal.FedoraReaderXmlHelperImp;
+import se.uu.ub.cora.fedora.parser.internal.XMLXPathParserFactoryImp;
+import se.uu.ub.cora.fedora.reader.FedoraReaderFactory;
+import se.uu.ub.cora.fedora.reader.internal.FedoraReaderFactoryImp;
 import se.uu.ub.cora.fedora.reader.internal.FedoraReaderImp;
 import se.uu.ub.cora.httphandler.HttpHandlerFactoryImp;
 

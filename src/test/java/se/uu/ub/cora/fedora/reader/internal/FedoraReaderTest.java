@@ -37,14 +37,11 @@ import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.data.DataGroupProvider;
 import se.uu.ub.cora.dataspies.DataAtomicFactorySpy;
 import se.uu.ub.cora.dataspies.DataGroupFactorySpy;
-import se.uu.ub.cora.fedora.parser.FedoraReaderXmlHelperSpy;
-import se.uu.ub.cora.fedora.parser.HttpHandlerFactorySpy;
-import se.uu.ub.cora.fedora.parser.HttpHandlerSpy;
+import se.uu.ub.cora.fedora.parser.internal.FedoraReaderXmlHelperSpy;
+import se.uu.ub.cora.fedora.parser.internal.HttpHandlerFactorySpy;
+import se.uu.ub.cora.fedora.parser.internal.HttpHandlerSpy;
 import se.uu.ub.cora.fedora.reader.FedoraException;
 import se.uu.ub.cora.fedora.reader.FedoraReader;
-import se.uu.ub.cora.fedora.reader.FedoraReaderXmlHelperSpy2;
-import se.uu.ub.cora.fedora.reader.HttpHandlerFactorySpy2;
-import se.uu.ub.cora.fedora.reader.HttpHandlerSpy2;
 import se.uu.ub.cora.testutils.mcr.MethodCallRecorder;
 
 // find objects with all info:

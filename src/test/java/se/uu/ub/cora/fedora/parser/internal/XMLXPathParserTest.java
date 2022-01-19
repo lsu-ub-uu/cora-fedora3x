@@ -16,7 +16,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.parser;
+package se.uu.ub.cora.fedora.parser.internal;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -31,6 +31,11 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.UserDataHandler;
+
+import se.uu.ub.cora.fedora.parser.XMLXPathParser;
+import se.uu.ub.cora.fedora.parser.XMLXPathParserException;
+import se.uu.ub.cora.fedora.parser.XMLXPathParserFactory;
+import se.uu.ub.cora.fedora.parser.internal.XMLXPathParserFactoryImp;
 
 public class XMLXPathParserTest {
 	private XMLXPathParserFactory xmlxPathParserFactory = new XMLXPathParserFactoryImp();
