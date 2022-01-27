@@ -25,9 +25,9 @@ import static org.testng.Assert.assertTrue;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import se.uu.ub.cora.fedora.parser.FedoraReaderXmlHelperImp;
 import se.uu.ub.cora.fedora.parser.XMLXPathParserFactory;
 import se.uu.ub.cora.fedora.parser.XMLXPathParserFactoryImp;
+import se.uu.ub.cora.fedora.parser.internal.FedoraReaderXmlHelperImp;
 import se.uu.ub.cora.fedora.reader.internal.FedoraReaderImp;
 import se.uu.ub.cora.httphandler.HttpHandlerFactoryImp;
 

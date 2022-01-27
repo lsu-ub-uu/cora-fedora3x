@@ -18,6 +18,8 @@
  */
 package se.uu.ub.cora.fedora.parser;
 
+import se.uu.ub.cora.fedora.parser.internal.XMLXPathParserImp;
+
 public class XMLXPathParserFactoryImp implements XMLXPathParserFactory {
 	@Override
 	public XMLXPathParser factor() {

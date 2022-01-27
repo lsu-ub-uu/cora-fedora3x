@@ -16,12 +16,18 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.parser;
+package se.uu.ub.cora.fedora.parser.internal;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.w3c.dom.NodeList;
+
+import se.uu.ub.cora.fedora.parser.FedoraReaderXmlHelper;
+import se.uu.ub.cora.fedora.parser.ListSession;
+import se.uu.ub.cora.fedora.parser.XMLXPathParser;
+import se.uu.ub.cora.fedora.parser.XMLXPathParserException;
+import se.uu.ub.cora.fedora.parser.XMLXPathParserFactory;
 
 public class FedoraReaderXmlHelperImp implements FedoraReaderXmlHelper {
 	private XMLXPathParserFactory xmlXPathParserFactory;

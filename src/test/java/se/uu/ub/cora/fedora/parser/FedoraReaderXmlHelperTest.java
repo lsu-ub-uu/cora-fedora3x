@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import se.uu.ub.cora.fedora.parser.internal.FedoraReaderXmlHelperImp;
+
 public class FedoraReaderXmlHelperTest {
 	private FedoraReaderXmlHelperImp fedoraReaderXmlHelper;
 	private XMLXPathParserFactory xmlXPathParserFactory;

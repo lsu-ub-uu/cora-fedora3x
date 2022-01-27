@@ -18,8 +18,8 @@
  */
 package se.uu.ub.cora.fedora.reader;
 
-import se.uu.ub.cora.fedora.parser.FedoraReaderXmlHelperImp;
 import se.uu.ub.cora.fedora.parser.XMLXPathParserFactoryImp;
+import se.uu.ub.cora.fedora.parser.internal.FedoraReaderXmlHelperImp;
 import se.uu.ub.cora.fedora.reader.internal.FedoraReaderImp;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;
 import se.uu.ub.cora.httphandler.HttpHandlerFactoryImp;
