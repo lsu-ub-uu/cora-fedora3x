@@ -38,9 +38,9 @@
     </properties>
 
     <scm>
-        <connection>scm:git:https://github.com/lsu-ub-uu/cora-fedora.git</connection>
-        <developerConnection>scm:git:https://github.com/lsu-ub-uu/cora-fedora.git</developerConnection>
-        <url>https://github.com/lsu-ub-uu/cora-fedora.git</url>
+        <connection>scm:git:https://github.com/lsu-ub-uu/cora-fedora3x.git</connection>
+        <developerConnection>scm:git:https://github.com/lsu-ub-uu/cora-fedora3x.git</developerConnection>
+        <url>https://github.com/lsu-ub-uu/cora-fedora3x.git</url>
       <tag>HEAD</tag>
   </scm>
 
