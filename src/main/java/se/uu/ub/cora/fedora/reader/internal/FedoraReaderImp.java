@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import se.uu.ub.cora.data.DataGroup;
+import se.uu.ub.cora.fedora.FedoraException;
 import se.uu.ub.cora.fedora.parser.FedoraReaderXmlHelper;
 import se.uu.ub.cora.fedora.parser.ListSession;
-import se.uu.ub.cora.fedora.reader.FedoraException;
 import se.uu.ub.cora.fedora.reader.FedoraReader;
 import se.uu.ub.cora.httphandler.HttpHandler;
 import se.uu.ub.cora.httphandler.HttpHandlerFactory;

@@ -21,6 +21,7 @@ package se.uu.ub.cora.fedora.reader;
 import java.util.List;
 
 import se.uu.ub.cora.data.DataGroup;
+import se.uu.ub.cora.fedora.FedoraException;
 
 /**
  * FedoraReader exposes methods to read data from a Fedora Commons system.

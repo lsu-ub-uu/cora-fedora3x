@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Uppsala University Library
+ * Copyright 2022 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -16,31 +16,25 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.reader;
+package se.uu.ub.cora.fedora;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
 
 import org.testng.annotations.Test;
 
-import se.uu.ub.cora.fedora.reader.FedoraException;
-
-public class FedoraExceptionTest {
-	@Test
-	public void testInit() {
-		String message = "message";
-		FedoraException exception = FedoraException.withMessage(message);
-		assertEquals(exception.getMessage(), "message");
-		assertTrue(exception instanceof RuntimeException);
-	}
+public class FedoraConnectionInfoTest {
 
 	@Test
-	public void testMessageAndError() throws Exception {
-		String message = "message";
-		Exception exception = new RuntimeException();
-		FedoraException storageException = FedoraException.withMessageAndException(message,
-				exception);
-		assertEquals(storageException.getMessage(), "message");
-		assertEquals(storageException.getCause(), exception);
+	public void testFedoraConnectionInfo() {
+		String fedoraUrl = "someFedoraUrl";
+		String fedoraUsername = "someUsername";
+		String fedoraPassword = "somePassword";
+
+		FedoraConnectionInfo connectionInfo = new FedoraConnectionInfo(fedoraUrl, fedoraUsername,
+				fedoraPassword);
+
+		assertEquals(connectionInfo.fedoraUrl, fedoraUrl);
+		assertEquals(connectionInfo.fedoraUsername, fedoraUsername);
+		assertEquals(connectionInfo.fedoraPassword, fedoraPassword);
 	}
 }

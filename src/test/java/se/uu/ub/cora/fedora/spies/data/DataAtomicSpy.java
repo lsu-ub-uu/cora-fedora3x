@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Uppsala University Library
+ * Copyright 2019 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -16,25 +16,38 @@
  *     You should have received a copy of the GNU General Public License
  *     along with Cora.  If not, see <http://www.gnu.org/licenses/>.
  */
-package se.uu.ub.cora.fedora.reader;
+package se.uu.ub.cora.fedora.spies.data;
 
-public class FedoraException extends RuntimeException {
-	private static final long serialVersionUID = -255261285196817577L;
+import se.uu.ub.cora.data.DataAtomic;
 
-	private FedoraException(String message) {
-		super(message);
+public class DataAtomicSpy implements DataAtomic {
+	public String nameInData;
+	public String value;
+	public String repeatId;
+
+	public DataAtomicSpy(String nameInData, String value) {
+		this.nameInData = nameInData;
+		this.value = value;
 	}
 
-	private FedoraException(String message, Exception e) {
-		super(message, e);
+	@Override
+	public String getRepeatId() {
+		return repeatId;
 	}
 
-	public static FedoraException withMessage(String message) {
-		return new FedoraException(message);
+	@Override
+	public String getNameInData() {
+		return nameInData;
 	}
 
-	public static FedoraException withMessageAndException(String message, Exception e) {
-		return new FedoraException(message, e);
+	@Override
+	public String getValue() {
+		return value;
+	}
+
+	@Override
+	public void setRepeatId(String repeatId) {
+		this.repeatId = repeatId;
 	}
 
 }
