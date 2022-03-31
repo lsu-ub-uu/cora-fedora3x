@@ -85,4 +85,10 @@ public class HttpHandlerSpy2 implements HttpHandler {
 		MCR.addCall("username", username, "password", password);
 	}
 
+	@Override
+	public InputStream getResponseBinary() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
