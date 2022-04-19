@@ -32,9 +32,9 @@
 
     <properties>
 		<httphandler.version>2.6.0</httphandler.version>
-        <coradata.version>6.2.0</coradata.version>
+        <coradata.version>7.0-SNAPSHOT</coradata.version>
         <json.version>3.3.0</json.version>
-        <testutils.version>1.3.0</testutils.version>
+        <testutils.version>1.4-SNAPSHOT</testutils.version>
     </properties>
 
     <scm>
